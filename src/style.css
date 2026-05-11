@@ -118,7 +118,7 @@ h2 { margin-bottom: 14px; font-size: 28px; }
 }
 .ghost-button { background: white; box-shadow: 5px 5px 0 var(--line); }
 .primary-button:hover, .ghost-button:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--line); }
-.primary-button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+.primary-button:disabled, .ghost-button:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: 5px 5px 0 var(--line); }
 .full { width: 100%; margin-top: 10px; }
 
 .workspace {
@@ -166,6 +166,14 @@ input[type="range"] { accent-color: var(--blue); }
   margin: 18px 0;
 }
 .check input { width: 20px; height: 20px; accent-color: var(--blue); }
+
+.backend-panel {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 3px solid var(--line);
+}
+.backend-panel h3 { margin: 0 0 8px; font-size: 20px; }
+.backend-panel p { color: var(--muted); line-height: 1.45; }
 
 .stage { min-height: 640px; }
 .stage-head {

@@ -1,0 +1,11 @@
+name = "pixel-forge"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-05-11"
+
+[[r2_buckets]]
+binding = "PIXEL_FORGE_UPLOADS"
+bucket_name = "pixel-forge-temp"
+
+[vars]
+# Configure in Cloudflare/GitHub secrets for real SD/LoRA conversion.
+# AI_IMAGE_ENDPOINT = "https://your-sd-lora-backend.example.com/convert"

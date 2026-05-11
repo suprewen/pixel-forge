@@ -13,6 +13,18 @@ type Settings = {
   palette: PaletteName
 }
 
+type CropRect = {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+type BackendUpload = {
+  key: string
+  url: string
+}
+
 const PALETTES: Record<Exclude<PaletteName, 'adaptive'>, number[][]> = {
   pico8: [
     [0, 0, 0], [29, 43, 83], [126, 37, 83], [0, 135, 81],
@@ -37,6 +49,9 @@ const state: {
   source?: HTMLImageElement
   sourceName: string
   objectUrl?: string
+  originalFile?: File
+  upload?: BackendUpload
+  crop?: CropRect
   settings: Settings
   variants: HTMLCanvasElement[]
   selected: number
@@ -63,7 +78,7 @@ app.innerHTML = `
     <section class="hero-panel">
       <div class="eyebrow">Client-side pixel art converter</div>
       <h1>Pixel Forge</h1>
-      <p class="lead">一个参考 PixelMe 交互思路的免费静态站：图片只在浏览器本地处理，不上传服务器。</p>
+      <p class="lead">一个参考 PixelMe 交互思路的像素风工具：默认浏览器本地处理，也可启用 Workers + R2 + AI 后端。</p>
       <div class="hero-actions">
         <label class="primary-button" for="fileInput">选择图片</label>
         <button class="ghost-button" id="demoButton" type="button">生成示例</button>
@@ -106,6 +121,14 @@ app.innerHTML = `
 
         <label class="check"><input id="dither" type="checkbox" checked /> 启用抖动，让过渡更像老游戏机</label>
         <button id="downloadButton" class="primary-button full" type="button" disabled>下载 PNG</button>
+
+        <div class="backend-panel">
+          <h3>后端增强</h3>
+          <p id="backendStatus">可选：临时上传到 Cloudflare R2，再做人脸裁剪或 AI 像素风转换。</p>
+          <button id="uploadButton" class="ghost-button full" type="button" disabled>上传到 R2 临时区</button>
+          <button id="detectButton" class="ghost-button full" type="button" disabled>人脸检测 / 自动裁剪</button>
+          <button id="aiButton" class="primary-button full" type="button" disabled>SD / LoRA 像素风转换</button>
+        </div>
       </aside>
 
       <section class="stage card">
@@ -127,8 +150,8 @@ app.innerHTML = `
       <h2>复刻说明</h2>
       <div class="steps">
         <p><strong>PixelMe 网页版：</strong>前端压缩图片，后端做人脸检测和转换。</p>
-        <p><strong>这个版本：</strong>全静态、无后端、无登录，适合部署在 Cloudflare Pages / GitHub Pages / Netlify 免费层。</p>
-        <p><strong>后续可升级：</strong>接 Cloudflare Workers + R2，或接一个 SD/LoRA 后端做真正 AI 风格化。</p>
+        <p><strong>当前版本：</strong>保留本地 Canvas 转换，同时加入 Cloudflare Workers API、R2 临时存储和 AI 转换适配层。</p>
+        <p><strong>AI 转换：</strong>前端会调用 Workers，再由 Workers 转发到已配置的 SD / LoRA 图像后端；未配置时会明确提示。</p>
       </div>
     </section>
   </main>
@@ -139,7 +162,11 @@ const els = {
   dropZone: document.querySelector<HTMLDivElement>('#dropZone')!,
   demoButton: document.querySelector<HTMLButtonElement>('#demoButton')!,
   downloadButton: document.querySelector<HTMLButtonElement>('#downloadButton')!,
+  uploadButton: document.querySelector<HTMLButtonElement>('#uploadButton')!,
+  detectButton: document.querySelector<HTMLButtonElement>('#detectButton')!,
+  aiButton: document.querySelector<HTMLButtonElement>('#aiButton')!,
   status: document.querySelector<HTMLParagraphElement>('#status')!,
+  backendStatus: document.querySelector<HTMLParagraphElement>('#backendStatus')!,
   sourceCanvas: document.querySelector<HTMLCanvasElement>('#sourceCanvas')!,
   resultCanvas: document.querySelector<HTMLCanvasElement>('#resultCanvas')!,
   tabs: document.querySelector<HTMLDivElement>('#variantTabs')!,
@@ -176,6 +203,7 @@ function bindControls() {
       state.settings.colors = 24
     }
     syncControls()
+updateBackendControls()
     renderAll()
   })
   els.palette.addEventListener('change', () => {
@@ -192,6 +220,9 @@ function bindControls() {
   })
   els.demoButton.addEventListener('click', loadDemo)
   els.downloadButton.addEventListener('click', downloadCurrent)
+  els.uploadButton.addEventListener('click', uploadForBackend)
+  els.detectButton.addEventListener('click', runAutoCrop)
+  els.aiButton.addEventListener('click', runAiConvert)
   ;['dragenter', 'dragover'].forEach((eventName) => {
     els.dropZone.addEventListener(eventName, (event) => {
       event.preventDefault()
@@ -224,10 +255,14 @@ async function loadFile(file: File) {
   if (!file.type.startsWith('image/')) return
   if (state.objectUrl) URL.revokeObjectURL(state.objectUrl)
   state.objectUrl = URL.createObjectURL(file)
+  state.originalFile = file
+  state.upload = undefined
+  state.crop = undefined
   state.sourceName = file.name.replace(/\.[^.]+$/, '')
   const img = await loadImage(state.objectUrl)
   state.source = img
   els.status.textContent = `已载入 ${file.name}，正在转换…`
+  updateBackendControls()
   renderAll()
 }
 
@@ -270,8 +305,12 @@ function loadDemo() {
   const img = new Image()
   img.onload = () => {
     state.source = img
+    state.originalFile = undefined
+    state.upload = undefined
+    state.crop = undefined
     state.sourceName = 'pixel-forge-demo'
     els.status.textContent = '已载入示例图。'
+    updateBackendControls()
     renderAll()
   }
   img.src = canvas.toDataURL('image/png')
@@ -281,7 +320,7 @@ function renderAll() {
   if (!state.source) return
   els.status.textContent = '转换中…'
   requestAnimationFrame(() => {
-    const normalized = normalizeSource(state.source!, state.settings.mode)
+    const normalized = normalizeSource(state.source!, state.settings.mode, state.crop)
     drawCanvas(els.sourceCanvas, normalized, true)
     const variants = [state.settings.block - 2, state.settings.block, state.settings.block + 4]
       .map((block) => pixelate(normalized, { ...state.settings, block: Math.max(3, block) }))
@@ -294,7 +333,7 @@ function renderAll() {
   })
 }
 
-function normalizeSource(img: HTMLImageElement, mode: Settings['mode']): HTMLCanvasElement {
+function normalizeSource(img: HTMLImageElement, mode: Settings['mode'], crop?: CropRect): HTMLCanvasElement {
   const max = 1024
   const sourceRatio = img.width / img.height
   let sx = 0
@@ -302,7 +341,12 @@ function normalizeSource(img: HTMLImageElement, mode: Settings['mode']): HTMLCan
   let sw = img.width
   let sh = img.height
 
-  if (mode === 'portrait') {
+  if (crop) {
+    sx = crop.x
+    sy = crop.y
+    sw = crop.width
+    sh = crop.height
+  } else if (mode === 'portrait') {
     const targetRatio = 1
     if (sourceRatio > targetRatio) {
       sw = img.height * targetRatio
@@ -465,6 +509,92 @@ function renderTabs() {
   })
 }
 
+
+function updateBackendControls() {
+  els.uploadButton.disabled = !state.originalFile
+  els.detectButton.disabled = !state.upload
+  els.aiButton.disabled = !state.upload
+}
+
+async function uploadForBackend() {
+  if (!state.originalFile) return
+  els.backendStatus.textContent = '正在上传到 R2 临时区…'
+  const form = new FormData()
+  form.append('image', state.originalFile)
+  const response = await fetch('/api/upload', { method: 'POST', body: form })
+  const payload = await response.json() as BackendUpload & { message?: string }
+  if (!response.ok) {
+    els.backendStatus.textContent = payload.message ?? '上传失败。'
+    return
+  }
+  state.upload = payload
+  els.backendStatus.textContent = '已临时上传。可继续做人脸裁剪或 AI 转换。'
+  updateBackendControls()
+}
+
+async function runAutoCrop() {
+  if (!state.upload || !state.source) return
+  els.backendStatus.textContent = '正在检测人脸 / 计算裁剪区域…'
+  const faceBox = await detectFaceInBrowser()
+  const response = await fetch('/api/detect', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      key: state.upload.key,
+      width: state.source.naturalWidth || state.source.width,
+      height: state.source.naturalHeight || state.source.height,
+      faceBox,
+    }),
+  })
+  const payload = await response.json() as { crop?: CropRect; detected?: boolean; source?: string }
+  if (!response.ok || !payload.crop) {
+    els.backendStatus.textContent = '裁剪失败。'
+    return
+  }
+  state.crop = payload.crop
+  els.backendStatus.textContent = payload.detected ? '检测到人脸，已自动裁剪。' : '未检测到人脸，已使用居中智能裁剪。'
+  renderAll()
+}
+
+async function runAiConvert() {
+  if (!state.upload) return
+  els.backendStatus.textContent = '正在请求 SD / LoRA 像素风转换…'
+  const response = await fetch('/api/convert', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ key: state.upload.key, crop: state.crop }),
+  })
+  const payload = await response.json() as { url?: string; message?: string }
+  if (!response.ok || !payload.url) {
+    els.backendStatus.textContent = payload.message ?? 'AI 后端尚未配置或转换失败。'
+    return
+  }
+  const img = await loadImage(payload.url)
+  state.source = img
+  state.crop = undefined
+  state.sourceName = `${state.sourceName || 'pixel-forge'}-ai`
+  els.backendStatus.textContent = 'AI 像素风结果已载入，可继续微调或下载。'
+  renderAll()
+}
+
+async function detectFaceInBrowser(): Promise<CropRect | null> {
+  if (!state.originalFile) return null
+  const detectorCtor = (window as unknown as {
+    FaceDetector?: new (options?: { fastMode?: boolean; maxDetectedFaces?: number }) => {
+      detect(input: ImageBitmapSource): Promise<Array<{ boundingBox: DOMRectReadOnly }>>
+    }
+  }).FaceDetector
+  if (!detectorCtor) return null
+  const bitmap = await createImageBitmap(state.originalFile)
+  try {
+    const faces = await new detectorCtor({ fastMode: true, maxDetectedFaces: 1 }).detect(bitmap)
+    const box = faces[0]?.boundingBox
+    return box ? { x: box.x, y: box.y, width: box.width, height: box.height } : null
+  } finally {
+    bitmap.close()
+  }
+}
+
 function downloadCurrent() {
   const source = state.variants[state.selected]
   if (!source) return
@@ -480,3 +610,4 @@ function clamp(value: number) {
 
 bindControls()
 syncControls()
+updateBackendControls()
