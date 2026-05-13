@@ -75,44 +75,70 @@ const app = document.querySelector<HTMLDivElement>('#app')!
 
 app.innerHTML = `
   <main class="shell">
-    <section class="hero-panel">
+    <section class="hero-panel compact-hero">
       <div class="hero-copy">
-        <div class="eyebrow">Pixel art image maker</div>
-        <h1>把照片变成像素头像。</h1>
-        <p class="lead">上传一张图片，调一调颗粒、颜色和裁剪方式，就能下载一张干净的像素风 PNG。</p>
-        <div class="hero-actions">
-          <label class="primary-button" for="fileInput">上传图片</label>
-          <button class="ghost-button" id="demoButton" type="button">先看示例</button>
-        </div>
-        <p class="note">图片会先在浏览器里处理。需要智能裁剪或 AI 转换时，才会临时上传。</p>
+        <div class="eyebrow">Pixel Forge</div>
+        <h1>上传照片，<br />直接调成像素风。</h1>
+        <p class="lead">先选图，马上看到结果。满意就下载；不满意再换预设、调颗粒和颜色。</p>
       </div>
-      <div class="hero-card" aria-hidden="true">
-        <div class="pixel-face">
-          <span></span><span></span><span></span>
-        </div>
-        <div class="hero-card-caption">clean pixel output</div>
+      <div class="hero-actions">
+        <label class="primary-button" for="fileInput">上传图片</label>
+        <button class="ghost-button" id="demoButton" type="button">试试示例</button>
       </div>
     </section>
 
     <section class="workspace">
-      <aside class="controls card">
-        <div class="section-kicker">1. 选择图片</div>
-        <input id="fileInput" type="file" accept="image/*" />
-        <div id="dropZone" class="drop-zone">
-          <strong>拖一张图片到这里</strong>
-          <span>支持 PNG、JPG、WebP。头像、宠物、风景都可以。</span>
+      <section class="stage card">
+        <div class="stage-head">
+          <div>
+            <div class="section-kicker">预览</div>
+            <h2>结果先给你看</h2>
+            <p id="status">上传一张图片，或先用示例体验。</p>
+          </div>
+          <div class="stage-actions">
+            <div class="variant-tabs" id="variantTabs" aria-label="像素颗粒选项"></div>
+            <button id="downloadButton" class="primary-button" type="button" disabled>下载 PNG</button>
+          </div>
         </div>
 
-        <div class="section-kicker">2. 调整风格</div>
-        <label class="field">
-          <span>画面类型</span>
-          <select id="mode">
-            <option value="portrait">头像 / 人像</option>
-            <option value="landscape">风景 / 宠物 / 物体</option>
-          </select>
-        </label>
+        <div id="emptyState" class="empty-state">
+          <div class="empty-icon" aria-hidden="true"></div>
+          <h3>把图片放进来</h3>
+          <p>头像会自动裁成方形。风景、宠物和物体可以切到「完整画面」。</p>
+          <div class="empty-actions">
+            <label class="primary-button" for="fileInput">选择图片</label>
+            <button class="ghost-button" id="emptyDemoButton" type="button">看示例效果</button>
+          </div>
+        </div>
 
-        <label class="field">
+        <div class="preview-grid" aria-live="polite">
+          <div class="preview-box"><canvas id="sourceCanvas" width="512" height="512"></canvas><span>裁剪预览</span></div>
+          <div class="preview-box result"><canvas id="resultCanvas" width="512" height="512"></canvas><span>像素结果</span></div>
+        </div>
+      </section>
+
+      <aside class="controls card">
+        <input id="fileInput" type="file" accept="image/*" />
+        <div class="drop-zone compact-drop" id="dropZone">
+          <strong>拖拽上传</strong>
+          <span>PNG、JPG、WebP 都可以。</span>
+        </div>
+
+        <div class="section-kicker">快速风格</div>
+        <div class="preset-grid" aria-label="快速风格预设">
+          <button type="button" class="preset-button active" data-preset="clean"><strong>干净头像</strong><span>清晰、颜色少</span></button>
+          <button type="button" class="preset-button" data-preset="soft"><strong>柔和</strong><span>颗粒细一点</span></button>
+          <button type="button" class="preset-button" data-preset="retro"><strong>复古游戏</strong><span>PICO-8 色板</span></button>
+          <button type="button" class="preset-button" data-preset="chunky"><strong>粗颗粒</strong><span>更像小图标</span></button>
+        </div>
+
+        <div class="section-kicker control-kicker">画面</div>
+        <div class="segmented" role="group" aria-label="画面类型">
+          <button type="button" class="segment active" data-mode="portrait">头像裁剪</button>
+          <button type="button" class="segment" data-mode="landscape">完整画面</button>
+        </div>
+
+        <label class="field palette-field">
           <span>颜色风格</span>
           <select id="palette">
             <option value="adaptive">自动取色</option>
@@ -121,55 +147,33 @@ app.innerHTML = `
             <option value="nesish">NES 游戏机</option>
           </select>
         </label>
+        <select id="mode" class="visually-hidden" aria-hidden="true" tabindex="-1">
+          <option value="portrait">头像 / 人像</option>
+          <option value="landscape">风景 / 宠物 / 物体</option>
+        </select>
 
-        <label class="field range"><span>像素颗粒 <b id="blockValue">8</b></span><input id="block" type="range" min="3" max="18" value="8" /></label>
-        <label class="field range"><span>颜色数量 <b id="colorsValue">18</b></span><input id="colors" type="range" min="4" max="48" value="18" /></label>
-        <label class="field range"><span>对比度 <b id="contrastValue">14</b></span><input id="contrast" type="range" min="-40" max="60" value="14" /></label>
-        <label class="field range"><span>饱和度 <b id="saturationValue">14</b></span><input id="saturation" type="range" min="-80" max="80" value="14" /></label>
-        <label class="field range"><span>亮度 <b id="brightnessValue">0</b></span><input id="brightness" type="range" min="-40" max="40" value="0" /></label>
-
-        <label class="check"><input id="dither" type="checkbox" checked /> 保留复古颗粒感</label>
-        <button id="downloadButton" class="primary-button full" type="button" disabled>下载 PNG</button>
+        <details class="advanced-panel">
+          <summary>细调参数</summary>
+          <label class="field range"><span>像素颗粒 <b id="blockValue">8</b></span><input id="block" type="range" min="3" max="18" value="8" /></label>
+          <label class="field range"><span>颜色数量 <b id="colorsValue">18</b></span><input id="colors" type="range" min="4" max="48" value="18" /></label>
+          <label class="field range"><span>对比度 <b id="contrastValue">14</b></span><input id="contrast" type="range" min="-40" max="60" value="14" /></label>
+          <label class="field range"><span>饱和度 <b id="saturationValue">14</b></span><input id="saturation" type="range" min="-80" max="80" value="14" /></label>
+          <label class="field range"><span>亮度 <b id="brightnessValue">0</b></span><input id="brightness" type="range" min="-40" max="40" value="0" /></label>
+          <label class="check"><input id="dither" type="checkbox" checked /> 保留复古颗粒感</label>
+        </details>
 
         <div class="backend-panel">
-          <div class="section-kicker">可选增强</div>
-          <p id="backendStatus">想让头像裁得更准，可以先临时上传，再点智能裁剪。AI 风格化还在接入中。</p>
+          <div class="section-kicker">智能处理</div>
+          <p id="backendStatus">需要更准的人像裁剪时，再点这里。普通像素化不需要上传。</p>
           <button id="uploadButton" class="ghost-button full" type="button" disabled>准备智能处理</button>
-          <button id="detectButton" class="ghost-button full" type="button" disabled>智能裁剪头像</button>
+          <button id="detectButton" class="ghost-button full" type="button" disabled>重新裁头像</button>
           <button id="aiButton" class="secondary-button full" type="button" disabled>AI 像素风转换</button>
           <details class="dev-details">
             <summary>开发者状态</summary>
-            <p>当前已接入上传、临时存储和裁剪接口。AI 转换需要配置图像模型服务后才会启用。</p>
+            <p>上传、临时存储和裁剪接口已接入。AI 转换需要配置图像模型服务后才会启用。</p>
           </details>
         </div>
       </aside>
-
-      <section class="stage card">
-        <div class="stage-head">
-          <div>
-            <div class="section-kicker">3. 预览结果</div>
-            <h2>挑一个最顺眼的版本</h2>
-            <p id="status">上传图片后，这里会显示预览。</p>
-          </div>
-          <div class="variant-tabs" id="variantTabs" aria-label="像素颗粒选项"></div>
-        </div>
-        <div class="preview-grid">
-          <div class="preview-box"><canvas id="sourceCanvas" width="512" height="512"></canvas><span>裁剪预览</span></div>
-          <div class="preview-box result"><canvas id="resultCanvas" width="512" height="512"></canvas><span>像素结果</span></div>
-        </div>
-      </section>
-    </section>
-
-    <section class="explain card">
-      <div>
-        <div class="section-kicker">怎么用</div>
-        <h2>三步完成</h2>
-      </div>
-      <div class="steps">
-        <p><strong>上传图片</strong><span>先用浏览器本地生成像素效果，不需要等待后端。</span></p>
-        <p><strong>调整风格</strong><span>用颗粒、颜色、对比度和调色板找到你喜欢的味道。</span></p>
-        <p><strong>下载结果</strong><span>满意后直接保存 PNG。需要更准的人像裁剪时，再启用智能处理。</span></p>
-      </div>
     </section>
   </main>
 `
@@ -178,6 +182,10 @@ const els = {
   fileInput: document.querySelector<HTMLInputElement>('#fileInput')!,
   dropZone: document.querySelector<HTMLDivElement>('#dropZone')!,
   demoButton: document.querySelector<HTMLButtonElement>('#demoButton')!,
+  emptyDemoButton: document.querySelector<HTMLButtonElement>('#emptyDemoButton')!,
+  emptyState: document.querySelector<HTMLDivElement>('#emptyState')!,
+  presetButtons: [...document.querySelectorAll<HTMLButtonElement>('[data-preset]')],
+  modeButtons: [...document.querySelectorAll<HTMLButtonElement>('[data-mode]')],
   downloadButton: document.querySelector<HTMLButtonElement>('#downloadButton')!,
   uploadButton: document.querySelector<HTMLButtonElement>('#uploadButton')!,
   detectButton: document.querySelector<HTMLButtonElement>('#detectButton')!,
@@ -236,6 +244,18 @@ function bindControls() {
     if (file) loadFile(file)
   })
   els.demoButton.addEventListener('click', loadDemo)
+  els.emptyDemoButton.addEventListener('click', loadDemo)
+  els.presetButtons.forEach((button) => {
+    button.addEventListener('click', () => applyPreset(button.dataset.preset ?? 'clean'))
+  })
+  els.modeButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      state.settings.mode = button.dataset.mode as Settings['mode']
+      syncControls()
+      updateBackendControls()
+      renderAll()
+    })
+  })
   els.downloadButton.addEventListener('click', downloadCurrent)
   els.uploadButton.addEventListener('click', uploadForBackend)
   els.detectButton.addEventListener('click', runAutoCrop)
@@ -266,6 +286,40 @@ function syncControls() {
   els.mode.value = state.settings.mode
   els.palette.value = state.settings.palette
   els.dither.checked = state.settings.dither
+  updateActiveControls()
+}
+
+
+function applyPreset(name: string) {
+  const presets: Record<string, Partial<Settings>> = {
+    clean: { mode: 'portrait', palette: 'adaptive', block: 7, colors: 18, contrast: 14, saturation: 12, brightness: 0, dither: true },
+    soft: { mode: 'portrait', palette: 'adaptive', block: 5, colors: 28, contrast: 6, saturation: 8, brightness: 2, dither: false },
+    retro: { mode: 'portrait', palette: 'pico8', block: 8, colors: 16, contrast: 18, saturation: 18, brightness: 0, dither: true },
+    chunky: { mode: 'portrait', palette: 'nesish', block: 12, colors: 12, contrast: 24, saturation: 16, brightness: 0, dither: true },
+  }
+  Object.assign(state.settings, presets[name] ?? presets.clean)
+  syncControls()
+  renderAll()
+}
+
+function updateActiveControls() {
+  els.modeButtons.forEach((button) => {
+    button.classList.toggle('active', button.dataset.mode === state.settings.mode)
+  })
+  els.presetButtons.forEach((button) => {
+    const name = button.dataset.preset ?? 'clean'
+    const isActive =
+      (name === 'clean' && state.settings.palette === 'adaptive' && state.settings.block === 7 && state.settings.colors === 18) ||
+      (name === 'soft' && state.settings.block === 5 && !state.settings.dither) ||
+      (name === 'retro' && state.settings.palette === 'pico8') ||
+      (name === 'chunky' && state.settings.block >= 12)
+    button.classList.toggle('active', isActive)
+  })
+}
+
+function updateScreenState(hasImage = Boolean(state.source)) {
+  app.classList.toggle('has-image', hasImage)
+  els.emptyState.hidden = hasImage
 }
 
 async function loadFile(file: File) {
@@ -334,6 +388,8 @@ function loadDemo() {
 }
 
 function renderAll() {
+  updateScreenState()
+  updateActiveControls()
   if (!state.source) return
   els.status.textContent = '正在生成像素版本…'
   requestAnimationFrame(() => {
@@ -628,3 +684,4 @@ function clamp(value: number) {
 bindControls()
 syncControls()
 updateBackendControls()
+updateScreenState(false)
