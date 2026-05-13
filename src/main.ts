@@ -75,105 +75,110 @@ const app = document.querySelector<HTMLDivElement>('#app')!
 
 app.innerHTML = `
   <main class="shell">
-    <section class="hero-panel compact-hero">
-      <div class="hero-copy">
-        <div class="eyebrow">Pixel Forge</div>
-        <h1>上传照片，<br />直接调成像素风。</h1>
-        <p class="lead">先选图，马上看到结果。满意就下载；不满意再换预设、调颗粒和颜色。</p>
-      </div>
+    <input id="fileInput" type="file" accept="image/*" />
+
+    <section class="hero">
+      <div class="brand">Pixel Forge</div>
+      <h1>把照片变成像素头像</h1>
+      <p>上传人物照，生成像素风头像。</p>
       <div class="hero-actions">
-        <label class="primary-button" for="fileInput">上传图片</label>
+        <label class="primary-button" for="fileInput">上传照片</label>
         <button class="ghost-button" id="demoButton" type="button">试试示例</button>
       </div>
     </section>
 
-    <section class="workspace">
-      <section class="stage card">
-        <div class="stage-head">
-          <div>
-            <div class="section-kicker">预览</div>
-            <h2>结果先给你看</h2>
-            <p id="status">上传一张图片，或先用示例体验。</p>
-          </div>
-          <div class="stage-actions">
-            <div class="variant-tabs" id="variantTabs" aria-label="像素颗粒选项"></div>
-            <button id="downloadButton" class="primary-button" type="button" disabled>下载 PNG</button>
-          </div>
-        </div>
+    <section class="generator card">
+      <div id="emptyState" class="upload-panel">
+        <label class="drop-zone" id="dropZone" for="fileInput">
+          <span class="avatar-mark" aria-hidden="true"></span>
+          <strong>拖入照片</strong>
+          <small>或点击上传</small>
+        </label>
+        <button class="ghost-button compact" id="emptyDemoButton" type="button">用示例</button>
+      </div>
 
-        <div id="emptyState" class="empty-state">
-          <div class="empty-icon" aria-hidden="true"></div>
-          <h3>把图片放进来</h3>
-          <p>头像会自动裁成方形。风景、宠物和物体可以切到「完整画面」。</p>
-          <div class="empty-actions">
-            <label class="primary-button" for="fileInput">选择图片</label>
-            <button class="ghost-button" id="emptyDemoButton" type="button">看示例效果</button>
-          </div>
+      <section class="result-view" aria-live="polite">
+        <div class="canvas-frame">
+          <canvas id="resultCanvas" width="512" height="512"></canvas>
         </div>
-
-        <div class="preview-grid" aria-live="polite">
-          <div class="preview-box"><canvas id="sourceCanvas" width="512" height="512"></canvas><span>裁剪预览</span></div>
-          <div class="preview-box result"><canvas id="resultCanvas" width="512" height="512"></canvas><span>像素结果</span></div>
+        <div class="result-meta">
+          <p id="status">选择一张正面或半身照。</p>
+          <div class="stage-dots" aria-label="生成状态">
+            <span>已上传</span>
+            <span>已裁剪</span>
+            <span>已生成</span>
+          </div>
         </div>
       </section>
 
-      <aside class="controls card">
-        <input id="fileInput" type="file" accept="image/*" />
-        <div class="drop-zone compact-drop" id="dropZone">
-          <strong>拖拽上传</strong>
-          <span>PNG、JPG、WebP 都可以。</span>
+      <section class="quick-controls">
+        <div class="control-row">
+          <span class="control-label">风格</span>
+          <div class="pill-group preset-grid" aria-label="风格">
+            <button type="button" class="preset-button active" data-preset="clean">经典</button>
+            <button type="button" class="preset-button" data-preset="soft">柔和</button>
+            <button type="button" class="preset-button" data-preset="retro">复古</button>
+            <button type="button" class="preset-button" data-preset="chunky">粗颗粒</button>
+          </div>
         </div>
 
-        <div class="section-kicker">快速风格</div>
-        <div class="preset-grid" aria-label="快速风格预设">
-          <button type="button" class="preset-button active" data-preset="clean"><strong>干净头像</strong><span>清晰、颜色少</span></button>
-          <button type="button" class="preset-button" data-preset="soft"><strong>柔和</strong><span>颗粒细一点</span></button>
-          <button type="button" class="preset-button" data-preset="retro"><strong>复古游戏</strong><span>PICO-8 色板</span></button>
-          <button type="button" class="preset-button" data-preset="chunky"><strong>粗颗粒</strong><span>更像小图标</span></button>
+        <div class="control-row">
+          <span class="control-label">颗粒</span>
+          <div class="variant-tabs" id="variantTabs" aria-label="颗粒大小"></div>
         </div>
 
-        <div class="section-kicker control-kicker">画面</div>
-        <div class="segmented" role="group" aria-label="画面类型">
-          <button type="button" class="segment active" data-mode="portrait">头像裁剪</button>
-          <button type="button" class="segment" data-mode="landscape">完整画面</button>
+        <div class="control-row">
+          <span class="control-label">画面</span>
+          <div class="pill-group segmented" role="group" aria-label="画面">
+            <button type="button" class="segment active" data-mode="portrait">头像</button>
+            <button type="button" class="segment" data-mode="landscape">完整</button>
+          </div>
         </div>
 
-        <label class="field palette-field">
-          <span>颜色风格</span>
-          <select id="palette">
-            <option value="adaptive">自动取色</option>
-            <option value="pico8">PICO-8 复古</option>
-            <option value="gameboy">Game Boy 绿调</option>
-            <option value="nesish">NES 游戏机</option>
+        <button id="downloadButton" class="primary-button download" type="button" disabled>下载 PNG</button>
+      </section>
+    </section>
+
+    <section class="details-bar">
+      <details class="advanced-panel">
+        <summary>高级设置</summary>
+        <div class="advanced-grid">
+          <label class="field palette-field">
+            <span>颜色</span>
+            <select id="palette">
+              <option value="adaptive">自动</option>
+              <option value="pico8">PICO-8</option>
+              <option value="gameboy">Game Boy</option>
+              <option value="nesish">NES</option>
+            </select>
+          </label>
+          <select id="mode" class="visually-hidden" aria-hidden="true" tabindex="-1">
+            <option value="portrait">头像</option>
+            <option value="landscape">完整</option>
           </select>
-        </label>
-        <select id="mode" class="visually-hidden" aria-hidden="true" tabindex="-1">
-          <option value="portrait">头像 / 人像</option>
-          <option value="landscape">风景 / 宠物 / 物体</option>
-        </select>
-
-        <details class="advanced-panel">
-          <summary>细调参数</summary>
-          <label class="field range"><span>像素颗粒 <b id="blockValue">8</b></span><input id="block" type="range" min="3" max="18" value="8" /></label>
-          <label class="field range"><span>颜色数量 <b id="colorsValue">18</b></span><input id="colors" type="range" min="4" max="48" value="18" /></label>
-          <label class="field range"><span>对比度 <b id="contrastValue">14</b></span><input id="contrast" type="range" min="-40" max="60" value="14" /></label>
-          <label class="field range"><span>饱和度 <b id="saturationValue">14</b></span><input id="saturation" type="range" min="-80" max="80" value="14" /></label>
+          <label class="field range"><span>颗粒 <b id="blockValue">8</b></span><input id="block" type="range" min="3" max="18" value="8" /></label>
+          <label class="field range"><span>颜色数 <b id="colorsValue">18</b></span><input id="colors" type="range" min="4" max="48" value="18" /></label>
+          <label class="field range"><span>对比 <b id="contrastValue">14</b></span><input id="contrast" type="range" min="-40" max="60" value="14" /></label>
+          <label class="field range"><span>饱和 <b id="saturationValue">14</b></span><input id="saturation" type="range" min="-80" max="80" value="14" /></label>
           <label class="field range"><span>亮度 <b id="brightnessValue">0</b></span><input id="brightness" type="range" min="-40" max="40" value="0" /></label>
-          <label class="check"><input id="dither" type="checkbox" checked /> 保留复古颗粒感</label>
-        </details>
-
-        <div class="backend-panel">
-          <div class="section-kicker">智能处理</div>
-          <p id="backendStatus">需要更准的人像裁剪时，再点这里。普通像素化不需要上传。</p>
-          <button id="uploadButton" class="ghost-button full" type="button" disabled>准备智能处理</button>
-          <button id="detectButton" class="ghost-button full" type="button" disabled>重新裁头像</button>
-          <button id="aiButton" class="secondary-button full" type="button" disabled>AI 像素风转换</button>
-          <details class="dev-details">
-            <summary>开发者状态</summary>
-            <p>上传、临时存储和裁剪接口已接入。AI 转换需要配置图像模型服务后才会启用。</p>
-          </details>
+          <label class="check"><input id="dither" type="checkbox" checked /> 复古颗粒</label>
         </div>
-      </aside>
+      </details>
+
+      <details class="backend-panel">
+        <summary>开发者</summary>
+        <p id="backendStatus">上传和裁剪接口已接入。去背景会在下一步接入。</p>
+        <div class="backend-actions">
+          <button id="uploadButton" class="ghost-button" type="button" disabled>上传</button>
+          <button id="detectButton" class="ghost-button" type="button" disabled>裁剪</button>
+          <button id="aiButton" class="ghost-button" type="button" disabled>AI 转换</button>
+        </div>
+        <canvas id="sourceCanvas" width="512" height="512"></canvas>
+        <details class="dev-details">
+          <summary>状态说明</summary>
+          <p>技术状态只在这里显示，不进入主流程。</p>
+        </details>
+      </details>
     </section>
   </main>
 `
@@ -332,7 +337,7 @@ async function loadFile(file: File) {
   state.sourceName = file.name.replace(/\.[^.]+$/, '')
   const img = await loadImage(state.objectUrl)
   state.source = img
-  els.status.textContent = `已载入 ${file.name}，正在生成像素版本…`
+  els.status.textContent = '生成中…'
   updateBackendControls()
   renderAll()
 }
@@ -380,7 +385,7 @@ function loadDemo() {
     state.upload = undefined
     state.crop = undefined
     state.sourceName = 'pixel-forge-demo'
-    els.status.textContent = '已载入示例图，正在生成像素版本。'
+    els.status.textContent = '生成中…'
     updateBackendControls()
     renderAll()
   }
@@ -391,7 +396,7 @@ function renderAll() {
   updateScreenState()
   updateActiveControls()
   if (!state.source) return
-  els.status.textContent = '正在生成像素版本…'
+  els.status.textContent = '生成中…'
   requestAnimationFrame(() => {
     const normalized = normalizeSource(state.source!, state.settings.mode, state.crop)
     drawCanvas(els.sourceCanvas, normalized, true)
@@ -402,7 +407,7 @@ function renderAll() {
     renderTabs()
     drawCanvas(els.resultCanvas, state.variants[state.selected], true)
     els.downloadButton.disabled = false
-    els.status.textContent = '完成。可以继续微调，或直接下载 PNG。'
+    els.status.textContent = '完成，可下载。'
   })
 }
 
