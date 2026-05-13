@@ -76,27 +76,36 @@ const app = document.querySelector<HTMLDivElement>('#app')!
 app.innerHTML = `
   <main class="shell">
     <section class="hero-panel">
-      <div class="eyebrow">Client-side pixel art converter</div>
-      <h1>Pixel Forge</h1>
-      <p class="lead">一个参考 PixelMe 交互思路的像素风工具：默认浏览器本地处理，也可启用 Workers + R2 + AI 后端。</p>
-      <div class="hero-actions">
-        <label class="primary-button" for="fileInput">选择图片</label>
-        <button class="ghost-button" id="demoButton" type="button">生成示例</button>
+      <div class="hero-copy">
+        <div class="eyebrow">Pixel art image maker</div>
+        <h1>把照片变成像素头像。</h1>
+        <p class="lead">上传一张图片，调一调颗粒、颜色和裁剪方式，就能下载一张干净的像素风 PNG。</p>
+        <div class="hero-actions">
+          <label class="primary-button" for="fileInput">上传图片</label>
+          <button class="ghost-button" id="demoButton" type="button">先看示例</button>
+        </div>
+        <p class="note">图片会先在浏览器里处理。需要智能裁剪或 AI 转换时，才会临时上传。</p>
       </div>
-      <p class="note">实现路径：resize → 色彩增强 → 降色/调色板 → Floyd-Steinberg 抖动 → nearest-neighbor 放大。</p>
+      <div class="hero-card" aria-hidden="true">
+        <div class="pixel-face">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="hero-card-caption">clean pixel output</div>
+      </div>
     </section>
 
     <section class="workspace">
       <aside class="controls card">
-        <h2>控制台</h2>
+        <div class="section-kicker">1. 选择图片</div>
         <input id="fileInput" type="file" accept="image/*" />
         <div id="dropZone" class="drop-zone">
-          <strong>拖入图片</strong>
-          <span>或点击上方按钮选择。最大边会压到 1024px 内。</span>
+          <strong>拖一张图片到这里</strong>
+          <span>支持 PNG、JPG、WebP。头像、宠物、风景都可以。</span>
         </div>
 
+        <div class="section-kicker">2. 调整风格</div>
         <label class="field">
-          <span>模式</span>
+          <span>画面类型</span>
           <select id="mode">
             <option value="portrait">头像 / 人像</option>
             <option value="landscape">风景 / 宠物 / 物体</option>
@@ -104,54 +113,62 @@ app.innerHTML = `
         </label>
 
         <label class="field">
-          <span>调色板</span>
+          <span>颜色风格</span>
           <select id="palette">
-            <option value="adaptive">自适应</option>
-            <option value="pico8">PICO-8</option>
-            <option value="gameboy">Game Boy</option>
-            <option value="nesish">NES-ish</option>
+            <option value="adaptive">自动取色</option>
+            <option value="pico8">PICO-8 复古</option>
+            <option value="gameboy">Game Boy 绿调</option>
+            <option value="nesish">NES 游戏机</option>
           </select>
         </label>
 
-        <label class="field range"><span>像素块 <b id="blockValue">8</b></span><input id="block" type="range" min="3" max="18" value="8" /></label>
-        <label class="field range"><span>颜色数 <b id="colorsValue">18</b></span><input id="colors" type="range" min="4" max="48" value="18" /></label>
+        <label class="field range"><span>像素颗粒 <b id="blockValue">8</b></span><input id="block" type="range" min="3" max="18" value="8" /></label>
+        <label class="field range"><span>颜色数量 <b id="colorsValue">18</b></span><input id="colors" type="range" min="4" max="48" value="18" /></label>
         <label class="field range"><span>对比度 <b id="contrastValue">14</b></span><input id="contrast" type="range" min="-40" max="60" value="14" /></label>
         <label class="field range"><span>饱和度 <b id="saturationValue">14</b></span><input id="saturation" type="range" min="-80" max="80" value="14" /></label>
         <label class="field range"><span>亮度 <b id="brightnessValue">0</b></span><input id="brightness" type="range" min="-40" max="40" value="0" /></label>
 
-        <label class="check"><input id="dither" type="checkbox" checked /> 启用抖动，让过渡更像老游戏机</label>
+        <label class="check"><input id="dither" type="checkbox" checked /> 保留复古颗粒感</label>
         <button id="downloadButton" class="primary-button full" type="button" disabled>下载 PNG</button>
 
         <div class="backend-panel">
-          <h3>后端增强</h3>
-          <p id="backendStatus">可选：临时上传到 Cloudflare R2，再做人脸裁剪或 AI 像素风转换。</p>
-          <button id="uploadButton" class="ghost-button full" type="button" disabled>上传到 R2 临时区</button>
-          <button id="detectButton" class="ghost-button full" type="button" disabled>人脸检测 / 自动裁剪</button>
-          <button id="aiButton" class="primary-button full" type="button" disabled>SD / LoRA 像素风转换</button>
+          <div class="section-kicker">可选增强</div>
+          <p id="backendStatus">想让头像裁得更准，可以先临时上传，再点智能裁剪。AI 风格化还在接入中。</p>
+          <button id="uploadButton" class="ghost-button full" type="button" disabled>准备智能处理</button>
+          <button id="detectButton" class="ghost-button full" type="button" disabled>智能裁剪头像</button>
+          <button id="aiButton" class="secondary-button full" type="button" disabled>AI 像素风转换</button>
+          <details class="dev-details">
+            <summary>开发者状态</summary>
+            <p>当前已接入上传、临时存储和裁剪接口。AI 转换需要配置图像模型服务后才会启用。</p>
+          </details>
         </div>
       </aside>
 
       <section class="stage card">
         <div class="stage-head">
           <div>
-            <h2>预览</h2>
-            <p id="status">还没有图片。</p>
+            <div class="section-kicker">3. 预览结果</div>
+            <h2>挑一个最顺眼的版本</h2>
+            <p id="status">上传图片后，这里会显示预览。</p>
           </div>
-          <div class="variant-tabs" id="variantTabs"></div>
+          <div class="variant-tabs" id="variantTabs" aria-label="像素颗粒选项"></div>
         </div>
         <div class="preview-grid">
-          <div class="preview-box"><canvas id="sourceCanvas" width="512" height="512"></canvas><span>原图预处理</span></div>
-          <div class="preview-box result"><canvas id="resultCanvas" width="512" height="512"></canvas><span>像素风结果</span></div>
+          <div class="preview-box"><canvas id="sourceCanvas" width="512" height="512"></canvas><span>裁剪预览</span></div>
+          <div class="preview-box result"><canvas id="resultCanvas" width="512" height="512"></canvas><span>像素结果</span></div>
         </div>
       </section>
     </section>
 
     <section class="explain card">
-      <h2>复刻说明</h2>
+      <div>
+        <div class="section-kicker">怎么用</div>
+        <h2>三步完成</h2>
+      </div>
       <div class="steps">
-        <p><strong>PixelMe 网页版：</strong>前端压缩图片，后端做人脸检测和转换。</p>
-        <p><strong>当前版本：</strong>保留本地 Canvas 转换，同时加入 Cloudflare Workers API、R2 临时存储和 AI 转换适配层。</p>
-        <p><strong>AI 转换：</strong>前端会调用 Workers，再由 Workers 转发到已配置的 SD / LoRA 图像后端；未配置时会明确提示。</p>
+        <p><strong>上传图片</strong><span>先用浏览器本地生成像素效果，不需要等待后端。</span></p>
+        <p><strong>调整风格</strong><span>用颗粒、颜色、对比度和调色板找到你喜欢的味道。</span></p>
+        <p><strong>下载结果</strong><span>满意后直接保存 PNG。需要更准的人像裁剪时，再启用智能处理。</span></p>
       </div>
     </section>
   </main>
@@ -203,7 +220,7 @@ function bindControls() {
       state.settings.colors = 24
     }
     syncControls()
-updateBackendControls()
+    updateBackendControls()
     renderAll()
   })
   els.palette.addEventListener('change', () => {
@@ -261,7 +278,7 @@ async function loadFile(file: File) {
   state.sourceName = file.name.replace(/\.[^.]+$/, '')
   const img = await loadImage(state.objectUrl)
   state.source = img
-  els.status.textContent = `已载入 ${file.name}，正在转换…`
+  els.status.textContent = `已载入 ${file.name}，正在生成像素版本…`
   updateBackendControls()
   renderAll()
 }
@@ -309,7 +326,7 @@ function loadDemo() {
     state.upload = undefined
     state.crop = undefined
     state.sourceName = 'pixel-forge-demo'
-    els.status.textContent = '已载入示例图。'
+    els.status.textContent = '已载入示例图，正在生成像素版本。'
     updateBackendControls()
     renderAll()
   }
@@ -318,7 +335,7 @@ function loadDemo() {
 
 function renderAll() {
   if (!state.source) return
-  els.status.textContent = '转换中…'
+  els.status.textContent = '正在生成像素版本…'
   requestAnimationFrame(() => {
     const normalized = normalizeSource(state.source!, state.settings.mode, state.crop)
     drawCanvas(els.sourceCanvas, normalized, true)
@@ -329,7 +346,7 @@ function renderAll() {
     renderTabs()
     drawCanvas(els.resultCanvas, state.variants[state.selected], true)
     els.downloadButton.disabled = false
-    els.status.textContent = '转换完成。可调参数或下载 PNG。'
+    els.status.textContent = '完成。可以继续微调，或直接下载 PNG。'
   })
 }
 
@@ -518,7 +535,7 @@ function updateBackendControls() {
 
 async function uploadForBackend() {
   if (!state.originalFile) return
-  els.backendStatus.textContent = '正在上传到 R2 临时区…'
+  els.backendStatus.textContent = '正在准备智能处理…'
   const form = new FormData()
   form.append('image', state.originalFile)
   const response = await fetch('/api/upload', { method: 'POST', body: form })
@@ -528,13 +545,13 @@ async function uploadForBackend() {
     return
   }
   state.upload = payload
-  els.backendStatus.textContent = '已临时上传。可继续做人脸裁剪或 AI 转换。'
+  els.backendStatus.textContent = '已准备好。现在可以智能裁剪头像。'
   updateBackendControls()
 }
 
 async function runAutoCrop() {
   if (!state.upload || !state.source) return
-  els.backendStatus.textContent = '正在检测人脸 / 计算裁剪区域…'
+  els.backendStatus.textContent = '正在寻找头像主体…'
   const faceBox = await detectFaceInBrowser()
   const response = await fetch('/api/detect', {
     method: 'POST',
@@ -548,17 +565,17 @@ async function runAutoCrop() {
   })
   const payload = await response.json() as { crop?: CropRect; detected?: boolean; source?: string }
   if (!response.ok || !payload.crop) {
-    els.backendStatus.textContent = '裁剪失败。'
+    els.backendStatus.textContent = '暂时没裁好。你仍然可以使用当前预览。'
     return
   }
   state.crop = payload.crop
-  els.backendStatus.textContent = payload.detected ? '检测到人脸，已自动裁剪。' : '未检测到人脸，已使用居中智能裁剪。'
+  els.backendStatus.textContent = payload.detected ? '已根据人脸重新裁剪。' : '没有识别到明确人脸，已按画面中心裁剪。'
   renderAll()
 }
 
 async function runAiConvert() {
   if (!state.upload) return
-  els.backendStatus.textContent = '正在请求 SD / LoRA 像素风转换…'
+  els.backendStatus.textContent = '正在尝试 AI 像素风转换…'
   const response = await fetch('/api/convert', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -566,14 +583,14 @@ async function runAiConvert() {
   })
   const payload = await response.json() as { url?: string; message?: string }
   if (!response.ok || !payload.url) {
-    els.backendStatus.textContent = payload.message ?? 'AI 后端尚未配置或转换失败。'
+    els.backendStatus.textContent = 'AI 转换还没开放。当前可以先使用本地像素效果。'
     return
   }
   const img = await loadImage(payload.url)
   state.source = img
   state.crop = undefined
   state.sourceName = `${state.sourceName || 'pixel-forge'}-ai`
-  els.backendStatus.textContent = 'AI 像素风结果已载入，可继续微调或下载。'
+  els.backendStatus.textContent = 'AI 结果已载入。可以继续微调或下载。'
   renderAll()
 }
 
