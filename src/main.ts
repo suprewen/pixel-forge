@@ -60,12 +60,12 @@ const state: {
   selected: 1,
   variants: [],
   settings: {
-    block: 8,
-    colors: 18,
-    contrast: 14,
-    saturation: 14,
-    brightness: 0,
-    dither: true,
+    block: 6,
+    colors: 16,
+    contrast: 18,
+    saturation: 10,
+    brightness: 1,
+    dither: false,
     mode: 'portrait',
     palette: 'adaptive',
   },
@@ -148,12 +148,12 @@ app.innerHTML = `
             <option value="portrait">头像</option>
             <option value="landscape">原图</option>
           </select>
-          <label class="field range"><span>颗粒 <b id="blockValue">8</b></span><input id="block" type="range" min="3" max="18" value="8" /></label>
-          <label class="field range"><span>颜色数 <b id="colorsValue">18</b></span><input id="colors" type="range" min="4" max="48" value="18" /></label>
-          <label class="field range"><span>对比 <b id="contrastValue">14</b></span><input id="contrast" type="range" min="-40" max="60" value="14" /></label>
-          <label class="field range"><span>饱和 <b id="saturationValue">14</b></span><input id="saturation" type="range" min="-80" max="80" value="14" /></label>
-          <label class="field range"><span>亮度 <b id="brightnessValue">0</b></span><input id="brightness" type="range" min="-40" max="40" value="0" /></label>
-          <label class="check"><input id="dither" type="checkbox" checked /> 复古颗粒</label>
+          <label class="field range"><span>颗粒 <b id="blockValue">6</b></span><input id="block" type="range" min="3" max="18" value="6" /></label>
+          <label class="field range"><span>颜色数 <b id="colorsValue">16</b></span><input id="colors" type="range" min="4" max="48" value="16" /></label>
+          <label class="field range"><span>对比 <b id="contrastValue">18</b></span><input id="contrast" type="range" min="-40" max="60" value="18" /></label>
+          <label class="field range"><span>饱和 <b id="saturationValue">10</b></span><input id="saturation" type="range" min="-80" max="80" value="10" /></label>
+          <label class="field range"><span>亮度 <b id="brightnessValue">1</b></span><input id="brightness" type="range" min="-40" max="40" value="1" /></label>
+          <label class="check"><input id="dither" type="checkbox" /> 复古颗粒</label>
         </div>
       </details>
 
@@ -289,10 +289,10 @@ function syncControls() {
 
 function applyPreset(name: string) {
   const presets: Record<string, Partial<Settings>> = {
-    clean: { mode: 'portrait', palette: 'adaptive', block: 7, colors: 18, contrast: 14, saturation: 12, brightness: 0, dither: true },
-    soft: { mode: 'portrait', palette: 'adaptive', block: 5, colors: 28, contrast: 6, saturation: 8, brightness: 2, dither: false },
-    retro: { mode: 'portrait', palette: 'pico8', block: 8, colors: 16, contrast: 18, saturation: 18, brightness: 0, dither: true },
-    chunky: { mode: 'portrait', palette: 'nesish', block: 12, colors: 12, contrast: 24, saturation: 16, brightness: 0, dither: true },
+    clean: { mode: 'portrait', palette: 'adaptive', block: 6, colors: 16, contrast: 18, saturation: 10, brightness: 1, dither: false },
+    soft: { mode: 'portrait', palette: 'adaptive', block: 5, colors: 24, contrast: 8, saturation: 6, brightness: 3, dither: false },
+    retro: { mode: 'portrait', palette: 'pico8', block: 7, colors: 16, contrast: 22, saturation: 16, brightness: 0, dither: false },
+    chunky: { mode: 'portrait', palette: 'nesish', block: 11, colors: 12, contrast: 28, saturation: 14, brightness: 0, dither: false },
   }
   Object.assign(state.settings, presets[name] ?? presets.clean)
   syncControls()
@@ -427,10 +427,12 @@ function pixelate(input: HTMLCanvasElement, settings: Settings): HTMLCanvasEleme
 
   const imageData = sctx.getImageData(0, 0, small.width, small.height)
   enhance(imageData, settings)
+  simplifyTones(imageData, settings)
   const palette = settings.palette === 'adaptive'
     ? buildAdaptivePalette(imageData, settings.colors)
     : PALETTES[settings.palette]
   quantize(imageData, palette, settings.dither)
+  if (settings.mode === 'portrait') addAvatarEdges(imageData, palette)
   sctx.putImageData(imageData, 0, 0)
 
   const out = document.createElement('canvas')
@@ -456,6 +458,53 @@ function enhance(imageData: ImageData, settings: Settings) {
     data[i + 1] = clamp(gray + (g - gray) * sat)
     data[i + 2] = clamp(gray + (b - gray) * sat)
   }
+}
+
+function simplifyTones(imageData: ImageData, settings: Settings) {
+  const data = imageData.data
+  const levels = settings.palette === 'adaptive'
+    ? Math.max(4, Math.min(7, Math.round(settings.colors / 3)))
+    : 5
+  const step = 255 / (levels - 1)
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] === 0) continue
+    data[i] = clamp(Math.round(data[i] / step) * step)
+    data[i + 1] = clamp(Math.round(data[i + 1] / step) * step)
+    data[i + 2] = clamp(Math.round(data[i + 2] / step) * step)
+  }
+}
+
+function addAvatarEdges(imageData: ImageData, palette: number[][]) {
+  const { data, width, height } = imageData
+  const source = new Uint8ClampedArray(data)
+  const dark = nearestColor([24, 20, 28], palette)
+  const mark = new Uint8Array(width * height)
+
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      const idx = (y * width + x) * 4
+      if (source[idx + 3] === 0) continue
+      const l = luminance(source, idx)
+      const rx = ((y * width + x + 1) * 4)
+      const by = (((y + 1) * width + x) * 4)
+      const edge = Math.max(Math.abs(l - luminance(source, rx)), Math.abs(l - luminance(source, by)))
+      if (edge > 72 && l < 176) mark[y * width + x] = 1
+    }
+  }
+
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      if (!mark[y * width + x]) continue
+      const idx = (y * width + x) * 4
+      data[idx] = dark[0]
+      data[idx + 1] = dark[1]
+      data[idx + 2] = dark[2]
+    }
+  }
+}
+
+function luminance(data: Uint8ClampedArray, idx: number) {
+  return data[idx] * 0.299 + data[idx + 1] * 0.587 + data[idx + 2] * 0.114
 }
 
 function buildAdaptivePalette(imageData: ImageData, colorCount: number): number[][] {

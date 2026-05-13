@@ -43,8 +43,8 @@ export function smartPortraitCrop(imageWidth: number, imageHeight: number): Crop
 
 export function buildCropFromFaceBox(face: FaceBox, imageWidth: number, imageHeight: number): CropRect {
   const centerX = face.x + face.width / 2
-  const centerY = face.y + face.height * 0.48
-  const side = Math.max(face.width, face.height) * 2.15
+  const centerY = face.y + face.height * 0.68
+  const side = Math.max(face.width, face.height) * 2.65
   return squareAround(centerX, centerY, side, imageWidth, imageHeight)
 }
 
