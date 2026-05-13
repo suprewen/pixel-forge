@@ -1,15 +1,14 @@
 # Pixel Forge
 
-一个参考 PixelMe 交互思路的图片转像素风工具。默认浏览器本地 Canvas 处理，也新增了可选的 Cloudflare Workers + R2 + SD/LoRA 后端增强路径。
+Pixel Forge 是一个像素风头像生成器。上传一张人物照后，应用会自动裁剪头像，生成多种像素风版本，并支持 PNG 下载。
 
 ## 功能
 
 - 图片上传 / 拖拽
-- 头像模式、风景/宠物/物体模式
-- 自适应、PICO-8、Game Boy、NES-ish 调色板
-- 像素块、颜色数、对比度、饱和度、亮度调节
-- Floyd-Steinberg 抖动
-- 多档像素粒度预览
+- 自动头像裁剪
+- 多种像素风格：经典、柔和、复古、粗颗粒
+- 多档版本预览：清晰、标准、粗粒
+- 颜色、颗粒、对比度、饱和度、亮度微调
 - PNG 下载
 - 可选后端增强：
   - Cloudflare Pages Functions API
@@ -51,8 +50,8 @@ SD / LoRA 转换通过 Worker 环境变量接入：
 - `AI_IMAGE_ENDPOINT`：图像转换后端地址
 - `AI_IMAGE_TOKEN`：可选，Bearer token
 
-未配置时，前端会显示“AI 后端尚未配置”，本地 Canvas 像素化仍可正常使用。
+未配置时，本地 Canvas 像素化仍可正常使用。
 
-## 复刻边界
+## 实现边界
 
-PixelMe 网页版的核心转换在后端 API。Pixel Forge 已经接入类似架构的 API 壳：上传、检测裁剪、转换；真正的 SD / LoRA 效果取决于后续接入的图像模型服务。
+当前版本已经接入上传、头像裁剪和本地像素化流程。真正的 SD / LoRA 风格转换取决于后续接入的图像模型服务。

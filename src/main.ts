@@ -79,8 +79,8 @@ app.innerHTML = `
 
     <section class="hero">
       <div class="brand">Pixel Forge</div>
-      <h1>把照片变成像素头像</h1>
-      <p>上传人物照，生成像素风头像。</p>
+      <h1>一键生成像素风头像</h1>
+      <p>上传一张人物照，自动裁剪头像，并生成多种像素风版本。</p>
       <div class="hero-actions">
         <label class="primary-button" for="fileInput">上传照片</label>
         <button class="ghost-button" id="demoButton" type="button">试试示例</button>
@@ -91,7 +91,7 @@ app.innerHTML = `
       <div id="emptyState" class="upload-panel">
         <label class="drop-zone" id="dropZone" for="fileInput">
           <span class="avatar-mark" aria-hidden="true"></span>
-          <strong>拖入照片</strong>
+          <strong>拖入人物照</strong>
           <small>或点击上传</small>
         </label>
         <button class="ghost-button compact" id="emptyDemoButton" type="button">用示例</button>
@@ -102,11 +102,11 @@ app.innerHTML = `
           <canvas id="resultCanvas" width="512" height="512"></canvas>
         </div>
         <div class="result-meta">
-          <p id="status">选择一张正面或半身照。</p>
+          <p id="status">选择一张人物照开始生成。</p>
           <div class="stage-dots" aria-label="生成状态">
-            <span>已上传</span>
-            <span>已裁剪</span>
-            <span>已生成</span>
+            <span>上传照片</span>
+            <span>选择版本</span>
+            <span>下载头像</span>
           </div>
         </div>
       </section>
@@ -123,7 +123,7 @@ app.innerHTML = `
         </div>
 
         <div class="control-row">
-          <span class="control-label">颗粒</span>
+          <span class="control-label">版本</span>
           <div class="variant-tabs" id="variantTabs" aria-label="颗粒大小"></div>
         </div>
 
@@ -131,7 +131,7 @@ app.innerHTML = `
           <span class="control-label">画面</span>
           <div class="pill-group segmented" role="group" aria-label="画面">
             <button type="button" class="segment active" data-mode="portrait">头像</button>
-            <button type="button" class="segment" data-mode="landscape">完整</button>
+            <button type="button" class="segment" data-mode="landscape">原图</button>
           </div>
         </div>
 
@@ -141,7 +141,7 @@ app.innerHTML = `
 
     <section class="details-bar">
       <details class="advanced-panel">
-        <summary>高级设置</summary>
+        <summary>微调</summary>
         <div class="advanced-grid">
           <label class="field palette-field">
             <span>颜色</span>
@@ -154,7 +154,7 @@ app.innerHTML = `
           </label>
           <select id="mode" class="visually-hidden" aria-hidden="true" tabindex="-1">
             <option value="portrait">头像</option>
-            <option value="landscape">完整</option>
+            <option value="landscape">原图</option>
           </select>
           <label class="field range"><span>颗粒 <b id="blockValue">8</b></span><input id="block" type="range" min="3" max="18" value="8" /></label>
           <label class="field range"><span>颜色数 <b id="colorsValue">18</b></span><input id="colors" type="range" min="4" max="48" value="18" /></label>
@@ -166,8 +166,8 @@ app.innerHTML = `
       </details>
 
       <details class="backend-panel">
-        <summary>开发者</summary>
-        <p id="backendStatus">上传和裁剪接口已接入。去背景会在下一步接入。</p>
+        <summary>调试信息</summary>
+        <p id="backendStatus">上传和头像裁剪接口已接入。</p>
         <div class="backend-actions">
           <button id="uploadButton" class="ghost-button" type="button" disabled>上传</button>
           <button id="detectButton" class="ghost-button" type="button" disabled>裁剪</button>
@@ -176,7 +176,7 @@ app.innerHTML = `
         <canvas id="sourceCanvas" width="512" height="512"></canvas>
         <details class="dev-details">
           <summary>状态说明</summary>
-          <p>技术状态只在这里显示，不进入主流程。</p>
+          <p>接口状态只在这里显示，不影响主流程。</p>
         </details>
       </details>
     </section>
@@ -262,8 +262,8 @@ function bindControls() {
     })
   })
   els.downloadButton.addEventListener('click', downloadCurrent)
-  els.uploadButton.addEventListener('click', uploadForBackend)
-  els.detectButton.addEventListener('click', runAutoCrop)
+  els.uploadButton.addEventListener('click', () => uploadForBackend())
+  els.detectButton.addEventListener('click', () => runAutoCrop())
   els.aiButton.addEventListener('click', runAiConvert)
   ;['dragenter', 'dragover'].forEach((eventName) => {
     els.dropZone.addEventListener(eventName, (event) => {
@@ -337,9 +337,10 @@ async function loadFile(file: File) {
   state.sourceName = file.name.replace(/\.[^.]+$/, '')
   const img = await loadImage(state.objectUrl)
   state.source = img
-  els.status.textContent = '生成中…'
+  els.status.textContent = '正在生成头像…'
   updateBackendControls()
   renderAll()
+  void prepareUploadedAvatar()
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -359,7 +360,7 @@ function loadDemo() {
     state.upload = undefined
     state.crop = undefined
     state.sourceName = 'demo-portrait'
-    els.status.textContent = '生成中…'
+    els.status.textContent = '正在生成头像…'
     updateBackendControls()
     renderAll()
   }
@@ -373,7 +374,7 @@ function renderAll() {
   updateScreenState()
   updateActiveControls()
   if (!state.source) return
-  els.status.textContent = '生成中…'
+  els.status.textContent = '正在生成头像…'
   requestAnimationFrame(() => {
     const normalized = normalizeSource(state.source!, state.settings.mode, state.crop)
     drawCanvas(els.sourceCanvas, normalized, true)
@@ -553,7 +554,7 @@ function renderTabs() {
   state.variants.forEach((_, index) => {
     const button = document.createElement('button')
     button.type = 'button'
-    button.textContent = ['细', '中', '粗'][index]
+    button.textContent = ['清晰', '标准', '粗粒'][index]
     button.className = index === state.selected ? 'active' : ''
     button.addEventListener('click', () => {
       state.selected = index
@@ -571,25 +572,39 @@ function updateBackendControls() {
   els.aiButton.disabled = !state.upload
 }
 
-async function uploadForBackend() {
+async function prepareUploadedAvatar() {
   if (!state.originalFile) return
-  els.backendStatus.textContent = '正在准备智能处理…'
+  try {
+    els.status.textContent = '正在裁剪头像…'
+    const uploaded = await uploadForBackend(true)
+    if (uploaded) await runAutoCrop(true)
+  } catch {
+    els.backendStatus.textContent = '自动裁剪暂时不可用。你仍然可以下载当前头像。'
+    els.status.textContent = '完成，可下载。'
+  }
+}
+
+async function uploadForBackend(auto = false): Promise<boolean> {
+  if (!state.originalFile) return false
+  if (!auto) els.backendStatus.textContent = '正在准备图片…'
   const form = new FormData()
   form.append('image', state.originalFile)
   const response = await fetch('/api/upload', { method: 'POST', body: form })
   const payload = await response.json() as BackendUpload & { message?: string }
   if (!response.ok) {
     els.backendStatus.textContent = payload.message ?? '上传失败。'
-    return
+    return false
   }
   state.upload = payload
-  els.backendStatus.textContent = '已准备好。现在可以智能裁剪头像。'
+  els.backendStatus.textContent = '图片已上传。'
   updateBackendControls()
+  return true
 }
 
-async function runAutoCrop() {
-  if (!state.upload || !state.source) return
-  els.backendStatus.textContent = '正在寻找头像主体…'
+async function runAutoCrop(auto = false): Promise<boolean> {
+  if (!state.upload || !state.source) return false
+  if (auto) els.status.textContent = '正在裁剪头像…'
+  els.backendStatus.textContent = '正在裁剪头像…'
   const faceBox = await detectFaceInBrowser()
   const response = await fetch('/api/detect', {
     method: 'POST',
@@ -604,11 +619,12 @@ async function runAutoCrop() {
   const payload = await response.json() as { crop?: CropRect; detected?: boolean; source?: string }
   if (!response.ok || !payload.crop) {
     els.backendStatus.textContent = '暂时没裁好。你仍然可以使用当前预览。'
-    return
+    return false
   }
   state.crop = payload.crop
   els.backendStatus.textContent = payload.detected ? '已根据人脸重新裁剪。' : '没有识别到明确人脸，已按画面中心裁剪。'
   renderAll()
+  return true
 }
 
 async function runAiConvert() {
