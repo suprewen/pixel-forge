@@ -104,9 +104,9 @@ app.innerHTML = `
         <div class="result-meta">
           <p id="status">选择一张人物照开始生成。</p>
           <div class="stage-dots" aria-label="生成状态">
-            <span>上传照片</span>
+            <span>自动裁剪</span>
             <span>选择版本</span>
-            <span>下载头像</span>
+            <span>下载 PNG</span>
           </div>
         </div>
       </section>
@@ -125,14 +125,6 @@ app.innerHTML = `
         <div class="control-row">
           <span class="control-label">版本</span>
           <div class="variant-tabs" id="variantTabs" aria-label="颗粒大小"></div>
-        </div>
-
-        <div class="control-row">
-          <span class="control-label">画面</span>
-          <div class="pill-group segmented" role="group" aria-label="画面">
-            <button type="button" class="segment active" data-mode="portrait">头像</button>
-            <button type="button" class="segment" data-mode="landscape">原图</button>
-          </div>
         </div>
 
         <button id="downloadButton" class="primary-button download" type="button" disabled>下载 PNG</button>
