@@ -352,44 +352,21 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 }
 
 function loadDemo() {
-  const canvas = document.createElement('canvas')
-  canvas.width = 640
-  canvas.height = 640
-  const ctx = canvas.getContext('2d')!
-  const gradient = ctx.createLinearGradient(0, 0, 640, 640)
-  gradient.addColorStop(0, '#f9d1c8')
-  gradient.addColorStop(1, '#3860d1')
-  ctx.fillStyle = gradient
-  ctx.fillRect(0, 0, 640, 640)
-  ctx.fillStyle = '#ffe6bf'
-  ctx.beginPath()
-  ctx.arc(320, 280, 150, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.fillStyle = '#2d1a18'
-  ctx.fillRect(185, 150, 270, 95)
-  ctx.fillRect(165, 230, 70, 155)
-  ctx.fillRect(405, 230, 70, 155)
-  ctx.fillStyle = '#141414'
-  ctx.fillRect(255, 280, 32, 32)
-  ctx.fillRect(360, 280, 32, 32)
-  ctx.fillStyle = '#d75a6a'
-  ctx.fillRect(290, 370, 70, 18)
-  ctx.fillStyle = '#54c6eb'
-  ctx.fillRect(180, 455, 280, 150)
-  ctx.fillStyle = '#fff4b2'
-  ctx.fillRect(110, 500, 420, 55)
   const img = new Image()
   img.onload = () => {
     state.source = img
     state.originalFile = undefined
     state.upload = undefined
     state.crop = undefined
-    state.sourceName = 'pixel-forge-demo'
+    state.sourceName = 'demo-portrait'
     els.status.textContent = '生成中…'
     updateBackendControls()
     renderAll()
   }
-  img.src = canvas.toDataURL('image/png')
+  img.onerror = () => {
+    els.status.textContent = '示例加载失败。'
+  }
+  img.src = `/demo-portrait.jpg?v=${Date.now()}`
 }
 
 function renderAll() {
