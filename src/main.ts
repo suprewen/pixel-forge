@@ -80,24 +80,28 @@ app.innerHTML = `
     <section class="hero" aria-labelledby="heroTitle">
       <div class="hero-copy">
         <div class="brand">Pixel Forge</div>
-        <h1 id="heroTitle">把正脸照片压进 8-bit 身份牌</h1>
-        <p>上传人物照，自动裁成头像，现场生成可下载的像素 PNG。</p>
+        <h1 id="heroTitle">把照片做成像素头像</h1>
+        <p>上传人物照，自动裁成头像，生成可下载的方形像素 PNG。</p>
         <div class="hero-actions">
-          <label class="primary-button" for="fileInput">开始锻造</label>
-          <button class="ghost-button" id="demoButton" type="button">试试样张</button>
+          <label class="primary-button" for="fileInput">上传照片</label>
+          <button class="ghost-button" id="demoButton" type="button">使用示例</button>
         </div>
       </div>
 
       <aside class="hero-preview" aria-label="头像生成预览">
-        <div class="console-grid" aria-hidden="true">
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
+        <div class="portrait-stage" aria-hidden="true">
+          <figure class="source-card">
+            <img src="/demo-portrait.jpg" alt="示例人物照片" />
+          </figure>
+          <div class="pixel-card">
+            <img src="/demo-portrait.jpg" alt="" />
+          </div>
+          <div class="tool-card">
+            <span>6 px</span>
+            <span>16 色</span>
+            <span>PNG</span>
+          </div>
         </div>
-        <figure class="portrait-card">
-          <img src="/demo-portrait.jpg" alt="示例人物照片" />
-        </figure>
       </aside>
     </section>
 
@@ -106,9 +110,9 @@ app.innerHTML = `
         <label class="drop-zone" id="dropZone" for="fileInput">
           <span class="avatar-mark" aria-hidden="true"></span>
           <strong>拖入一张清晰人物照</strong>
-          <small>正脸、半身、生活照都可以。先裁头像，再做像素化。</small>
+          <small>正脸、半身、生活照都可以。先裁脸，再调像素风格。</small>
         </label>
-        <button class="ghost-button compact" id="emptyDemoButton" type="button">试试样张</button>
+        <button class="ghost-button compact" id="emptyDemoButton" type="button">使用示例</button>
       </div>
 
       <section class="result-view" aria-live="polite">
@@ -118,26 +122,26 @@ app.innerHTML = `
         <div class="result-meta">
           <p id="status">选择一张人物照开始生成。</p>
           <div class="stage-list" aria-label="生成流程">
-            <span>裁头像</span>
-            <span>选颗粒</span>
-            <span>存 PNG</span>
+            <span>裁脸</span>
+            <span>像素化</span>
+            <span>下载</span>
           </div>
         </div>
       </section>
 
       <section class="quick-controls" aria-label="快速设置">
         <div class="control-intro">
-          <h2>像素工作台</h2>
-          <p>调颗粒、调颜色，然后下载方形 PNG。</p>
+          <h2>头像工作室</h2>
+          <p>先裁脸，再调像素风格。</p>
         </div>
 
         <div class="control-row">
           <span class="control-label">风格</span>
           <div class="pill-group preset-grid" aria-label="风格">
-            <button type="button" class="preset-button active" data-preset="clean">锐利</button>
-            <button type="button" class="preset-button" data-preset="soft">柔光</button>
-            <button type="button" class="preset-button" data-preset="retro">街机</button>
-            <button type="button" class="preset-button" data-preset="chunky">粗格</button>
+            <button type="button" class="preset-button active" data-preset="clean">清晰</button>
+            <button type="button" class="preset-button" data-preset="soft">柔和</button>
+            <button type="button" class="preset-button" data-preset="retro">复古</button>
+            <button type="button" class="preset-button" data-preset="chunky">粗粒</button>
           </div>
         </div>
 

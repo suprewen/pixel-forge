@@ -7,12 +7,12 @@ const mainSource = readFileSync(join(root, 'src/main.ts'), 'utf8')
 const cssSource = readFileSync(join(root, 'src/style.css'), 'utf8')
 
 describe('Pixel Forge interface direction', () => {
-  it('uses the bolder portrait-console copy', () => {
-    expect(mainSource).toContain('把正脸照片压进 8-bit 身份牌')
-    expect(mainSource).toContain('开始锻造')
-    expect(mainSource).toContain('试试样张')
-    expect(mainSource).toContain('像素工作台')
-    expect(mainSource).toContain('调颗粒、调颜色，然后下载方形 PNG。')
+  it('uses a calmer portrait-studio product copy', () => {
+    expect(mainSource).toContain('把照片做成像素头像')
+    expect(mainSource).toContain('上传照片')
+    expect(mainSource).toContain('使用示例')
+    expect(mainSource).toContain('头像工作室')
+    expect(mainSource).toContain('先裁脸，再调像素风格。')
   })
 
   it('keeps visible copy free of common AI design tells and public competitor mentions', () => {
@@ -23,15 +23,15 @@ describe('Pixel Forge interface direction', () => {
     expect(mainSource).not.toMatch(/Elevate|Seamless|Unleash|Next-Gen|Revolutionize/i)
   })
 
-  it('locks the new arcade-console visual system', () => {
-    expect(cssSource).toContain('--accent: #b7ff2a')
-    expect(cssSource).toContain('--hot: #ff3d7f')
-    expect(cssSource).toContain('font-family: "Arial Narrow"')
-    expect(cssSource).toContain('.console-grid')
-    expect(cssSource).toContain('clip-path: polygon')
-    expect(cssSource).not.toContain('--accent: #3f7cff')
-    expect(cssSource).not.toContain('font-family: Avenir Next')
-    expect(cssSource).not.toContain('#fbf7ef')
-    expect(cssSource).not.toContain('#ff6a3d')
+  it('locks the refined studio visual system', () => {
+    expect(cssSource).toContain('--accent: #2f6bff')
+    expect(cssSource).toContain('--surface: #f6f7f2')
+    expect(cssSource).toContain('font-family: "Avenir Next"')
+    expect(cssSource).toContain('.portrait-stage')
+    expect(cssSource).toContain('border-radius: 28px')
+    expect(cssSource).not.toContain('--hot: #ff3d7f')
+    expect(cssSource).not.toContain('font-family: "Arial Narrow"')
+    expect(cssSource).not.toContain('.console-grid')
+    expect(cssSource).not.toContain('clip-path: polygon')
   })
 })
