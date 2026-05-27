@@ -80,25 +80,24 @@ app.innerHTML = `
     <section class="hero" aria-labelledby="heroTitle">
       <div class="hero-copy">
         <div class="brand">Pixel Forge</div>
-        <h1 id="heroTitle">把人物照锻成像素头像</h1>
-        <p>上传人物照，自动裁成头像，并生成可直接下载的像素风 PNG。</p>
+        <h1 id="heroTitle">把正脸照片压进 8-bit 身份牌</h1>
+        <p>上传人物照，自动裁成头像，现场生成可下载的像素 PNG。</p>
         <div class="hero-actions">
-          <label class="primary-button" for="fileInput">上传人物照</label>
-          <button class="ghost-button" id="demoButton" type="button">载入示例</button>
+          <label class="primary-button" for="fileInput">开始锻造</label>
+          <button class="ghost-button" id="demoButton" type="button">试试样张</button>
         </div>
       </div>
 
-      <aside class="hero-preview" aria-label="像素头像预览">
-        <div class="preview-stack" aria-hidden="true">
+      <aside class="hero-preview" aria-label="头像生成预览">
+        <div class="console-grid" aria-hidden="true">
+          <span></span>
           <span></span>
           <span></span>
           <span></span>
         </div>
-        <div class="pixel-face" aria-hidden="true">
-          <span class="eye left"></span>
-          <span class="eye right"></span>
-          <span class="mouth"></span>
-        </div>
+        <figure class="portrait-card">
+          <img src="/demo-portrait.jpg" alt="示例人物照片" />
+        </figure>
       </aside>
     </section>
 
@@ -107,9 +106,9 @@ app.innerHTML = `
         <label class="drop-zone" id="dropZone" for="fileInput">
           <span class="avatar-mark" aria-hidden="true"></span>
           <strong>拖入一张清晰人物照</strong>
-          <small>建议正脸或半身照。生成后可以继续微调。</small>
+          <small>正脸、半身、生活照都可以。先裁头像，再做像素化。</small>
         </label>
-        <button class="ghost-button compact" id="emptyDemoButton" type="button">载入示例</button>
+        <button class="ghost-button compact" id="emptyDemoButton" type="button">试试样张</button>
       </div>
 
       <section class="result-view" aria-live="polite">
@@ -119,31 +118,31 @@ app.innerHTML = `
         <div class="result-meta">
           <p id="status">选择一张人物照开始生成。</p>
           <div class="stage-list" aria-label="生成流程">
-            <span>自动裁剪</span>
-            <span>选择版本</span>
-            <span>下载 PNG</span>
+            <span>裁头像</span>
+            <span>选颗粒</span>
+            <span>存 PNG</span>
           </div>
         </div>
       </section>
 
       <section class="quick-controls" aria-label="快速设置">
         <div class="control-intro">
-          <h2>四种风格，一张头像</h2>
-          <p>生成后选择清晰、标准或粗粒版本，再下载 PNG。</p>
+          <h2>像素工作台</h2>
+          <p>调颗粒、调颜色，然后下载方形 PNG。</p>
         </div>
 
         <div class="control-row">
           <span class="control-label">风格</span>
           <div class="pill-group preset-grid" aria-label="风格">
-            <button type="button" class="preset-button active" data-preset="clean">干净</button>
-            <button type="button" class="preset-button" data-preset="soft">柔和</button>
-            <button type="button" class="preset-button" data-preset="retro">复古</button>
-            <button type="button" class="preset-button" data-preset="chunky">粗粒</button>
+            <button type="button" class="preset-button active" data-preset="clean">锐利</button>
+            <button type="button" class="preset-button" data-preset="soft">柔光</button>
+            <button type="button" class="preset-button" data-preset="retro">街机</button>
+            <button type="button" class="preset-button" data-preset="chunky">粗格</button>
           </div>
         </div>
 
         <div class="control-row">
-          <span class="control-label">版本</span>
+          <span class="control-label">颗粒版本</span>
           <div class="variant-tabs" id="variantTabs" aria-label="颗粒大小"></div>
         </div>
 
@@ -153,12 +152,12 @@ app.innerHTML = `
 
     <section class="details-bar">
       <details class="advanced-panel">
-        <summary>微调像素效果</summary>
+        <summary>打开细调面板</summary>
         <div class="advanced-grid">
           <label class="field palette-field">
-            <span>颜色</span>
+            <span>配色</span>
             <select id="palette">
-              <option value="adaptive">自动</option>
+              <option value="adaptive">自动取色</option>
               <option value="pico8">PICO-8</option>
               <option value="gameboy">Game Boy</option>
               <option value="nesish">NES</option>
@@ -169,7 +168,7 @@ app.innerHTML = `
             <option value="landscape">原图</option>
           </select>
           <label class="field range"><span>颗粒 <b id="blockValue">6</b></span><input id="block" type="range" min="3" max="18" value="6" /></label>
-          <label class="field range"><span>颜色数 <b id="colorsValue">16</b></span><input id="colors" type="range" min="4" max="48" value="16" /></label>
+          <label class="field range"><span>颜色 <b id="colorsValue">16</b></span><input id="colors" type="range" min="4" max="48" value="16" /></label>
           <label class="field range"><span>对比 <b id="contrastValue">18</b></span><input id="contrast" type="range" min="-40" max="60" value="18" /></label>
           <label class="field range"><span>饱和 <b id="saturationValue">10</b></span><input id="saturation" type="range" min="-80" max="80" value="10" /></label>
           <label class="field range"><span>亮度 <b id="brightnessValue">1</b></span><input id="brightness" type="range" min="-40" max="40" value="1" /></label>
