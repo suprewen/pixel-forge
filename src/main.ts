@@ -77,24 +77,39 @@ app.innerHTML = `
   <main class="shell">
     <input id="fileInput" type="file" accept="image/*" />
 
-    <section class="hero">
-      <div class="brand">Pixel Forge</div>
-      <h1>一键生成像素风头像</h1>
-      <p>上传一张人物照，自动裁剪头像，并生成多种像素风版本。</p>
-      <div class="hero-actions">
-        <label class="primary-button" for="fileInput">上传照片</label>
-        <button class="ghost-button" id="demoButton" type="button">试试示例</button>
+    <section class="hero" aria-labelledby="heroTitle">
+      <div class="hero-copy">
+        <div class="brand">Pixel Forge</div>
+        <h1 id="heroTitle">把人物照锻成像素头像</h1>
+        <p>上传人物照，自动裁成头像，并生成可直接下载的像素风 PNG。</p>
+        <div class="hero-actions">
+          <label class="primary-button" for="fileInput">上传人物照</label>
+          <button class="ghost-button" id="demoButton" type="button">载入示例</button>
+        </div>
       </div>
+
+      <aside class="hero-preview" aria-label="像素头像预览">
+        <div class="preview-stack" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="pixel-face" aria-hidden="true">
+          <span class="eye left"></span>
+          <span class="eye right"></span>
+          <span class="mouth"></span>
+        </div>
+      </aside>
     </section>
 
-    <section class="generator card">
+    <section class="generator card" aria-label="头像生成器">
       <div id="emptyState" class="upload-panel">
         <label class="drop-zone" id="dropZone" for="fileInput">
           <span class="avatar-mark" aria-hidden="true"></span>
-          <strong>拖入人物照</strong>
-          <small>或点击上传</small>
+          <strong>拖入一张清晰人物照</strong>
+          <small>建议正脸或半身照。生成后可以继续微调。</small>
         </label>
-        <button class="ghost-button compact" id="emptyDemoButton" type="button">用示例</button>
+        <button class="ghost-button compact" id="emptyDemoButton" type="button">载入示例</button>
       </div>
 
       <section class="result-view" aria-live="polite">
@@ -103,7 +118,7 @@ app.innerHTML = `
         </div>
         <div class="result-meta">
           <p id="status">选择一张人物照开始生成。</p>
-          <div class="stage-dots" aria-label="生成状态">
+          <div class="stage-list" aria-label="生成流程">
             <span>自动裁剪</span>
             <span>选择版本</span>
             <span>下载 PNG</span>
@@ -111,14 +126,19 @@ app.innerHTML = `
         </div>
       </section>
 
-      <section class="quick-controls">
+      <section class="quick-controls" aria-label="快速设置">
+        <div class="control-intro">
+          <h2>四种风格，一张头像</h2>
+          <p>生成后选择清晰、标准或粗粒版本，再下载 PNG。</p>
+        </div>
+
         <div class="control-row">
           <span class="control-label">风格</span>
           <div class="pill-group preset-grid" aria-label="风格">
-            <button type="button" class="preset-button active" data-preset="clean">经典</button>
+            <button type="button" class="preset-button active" data-preset="clean">干净</button>
             <button type="button" class="preset-button" data-preset="soft">柔和</button>
             <button type="button" class="preset-button" data-preset="retro">复古</button>
-            <button type="button" class="preset-button" data-preset="chunky">粗颗粒</button>
+            <button type="button" class="preset-button" data-preset="chunky">粗粒</button>
           </div>
         </div>
 
@@ -133,7 +153,7 @@ app.innerHTML = `
 
     <section class="details-bar">
       <details class="advanced-panel">
-        <summary>微调</summary>
+        <summary>微调像素效果</summary>
         <div class="advanced-grid">
           <label class="field palette-field">
             <span>颜色</span>
@@ -153,7 +173,7 @@ app.innerHTML = `
           <label class="field range"><span>对比 <b id="contrastValue">18</b></span><input id="contrast" type="range" min="-40" max="60" value="18" /></label>
           <label class="field range"><span>饱和 <b id="saturationValue">10</b></span><input id="saturation" type="range" min="-80" max="80" value="10" /></label>
           <label class="field range"><span>亮度 <b id="brightnessValue">1</b></span><input id="brightness" type="range" min="-40" max="40" value="1" /></label>
-          <label class="check"><input id="dither" type="checkbox" /> 复古颗粒</label>
+          <label class="check"><input id="dither" type="checkbox" /> 加入复古颗粒</label>
         </div>
       </details>
 
@@ -306,7 +326,7 @@ function updateActiveControls() {
   els.presetButtons.forEach((button) => {
     const name = button.dataset.preset ?? 'clean'
     const isActive =
-      (name === 'clean' && state.settings.palette === 'adaptive' && state.settings.block === 7 && state.settings.colors === 18) ||
+      (name === 'clean' && state.settings.palette === 'adaptive' && state.settings.block === 6 && state.settings.colors === 16) ||
       (name === 'soft' && state.settings.block === 5 && !state.settings.dither) ||
       (name === 'retro' && state.settings.palette === 'pico8') ||
       (name === 'chunky' && state.settings.block >= 12)
@@ -575,7 +595,7 @@ function nearestColor(rgb: number[], palette: number[][]): number[] {
 function drawCanvas(target: HTMLCanvasElement, source: HTMLCanvasElement, contain = false) {
   const ctx = target.getContext('2d')!
   ctx.clearRect(0, 0, target.width, target.height)
-  ctx.fillStyle = '#f8f0dd'
+  ctx.fillStyle = '#eef3ff'
   ctx.fillRect(0, 0, target.width, target.height)
   ctx.imageSmoothingEnabled = false
   if (!contain) {
