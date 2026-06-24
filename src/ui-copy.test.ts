@@ -5,14 +5,17 @@ import { join } from 'node:path'
 const root = process.cwd()
 const mainSource = readFileSync(join(root, 'src/main.ts'), 'utf8')
 const cssSource = readFileSync(join(root, 'src/style.css'), 'utf8')
+const packageSource = readFileSync(join(root, 'package.json'), 'utf8')
+const designSource = readFileSync(join(root, 'DESIGN.md'), 'utf8')
 
-describe('Pixel Forge interface direction', () => {
-  it('uses a calmer portrait-studio product copy', () => {
-    expect(mainSource).toContain('把照片做成像素头像')
+describe('Pixel Forge product design workflow redesign direction', () => {
+  it('uses concise pixel avatar product copy', () => {
+    expect(mainSource).toContain('把真人照片变成清晰像素头像')
+    expect(mainSource).toContain('Pixel Forge 不是简单打马赛克')
     expect(mainSource).toContain('上传照片')
-    expect(mainSource).toContain('使用示例')
-    expect(mainSource).toContain('头像工作室')
-    expect(mainSource).toContain('先裁脸，再调像素风格。')
+    expect(mainSource).toContain('试试示例')
+    expect(mainSource).toContain('选择头像手感')
+    expect(mainSource).toContain('做一张能马上使用的像素头像')
   })
 
   it('keeps visible copy free of common AI design tells and public competitor mentions', () => {
@@ -23,15 +26,26 @@ describe('Pixel Forge interface direction', () => {
     expect(mainSource).not.toMatch(/Elevate|Seamless|Unleash|Next-Gen|Revolutionize/i)
   })
 
-  it('locks the refined studio visual system', () => {
-    expect(cssSource).toContain('--accent: #2f6bff')
-    expect(cssSource).toContain('--surface: #f6f7f2')
+  it('locks the product design workflow visual and motion system', () => {
+    expect(packageSource).toContain('"gsap"')
+    expect(mainSource).toContain("import { gsap } from 'gsap'")
+    expect(mainSource).toContain("import { ScrollTrigger } from 'gsap/ScrollTrigger'")
+    expect(cssSource).toContain('--accent: #ff9f1c')
+    expect(cssSource).toContain('--surface: #f6f4ef')
     expect(cssSource).toContain('font-family: "Avenir Next"')
-    expect(cssSource).toContain('.portrait-stage')
-    expect(cssSource).toContain('border-radius: 28px')
+    expect(cssSource).toContain('.brand-mark')
+    expect(cssSource).toContain('.sample-strip')
+    expect(cssSource).toContain('image-rendering: pixelated')
     expect(cssSource).not.toContain('--hot: #ff3d7f')
     expect(cssSource).not.toContain('font-family: "Arial Narrow"')
     expect(cssSource).not.toContain('.console-grid')
     expect(cssSource).not.toContain('clip-path: polygon')
+  })
+
+  it('documents a project-level design system', () => {
+    expect(designSource).toContain('Pixel Forge Design System')
+    expect(designSource).toContain('Face first')
+    expect(designSource).toContain('#ff9f1c')
+    expect(designSource).not.toMatch(/PixelMe/i)
   })
 })

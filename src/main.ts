@@ -1,4 +1,8 @@
 import './style.css'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+
+gsap.registerPlugin(ScrollTrigger)
 
 type PaletteName = 'adaptive' | 'pico8' | 'gameboy' | 'nesish'
 
@@ -74,56 +78,69 @@ const state: {
 const app = document.querySelector<HTMLDivElement>('#app')!
 
 app.innerHTML = `
-  <main class="shell">
+  <main class="page-shell">
     <input id="fileInput" type="file" accept="image/*" />
 
-    <section class="hero" aria-labelledby="heroTitle">
+    <nav class="top-nav" aria-label="主导航">
+      <a class="nav-brand" href="#top" aria-label="Pixel Forge 首页">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Pixel Forge</span>
+      </a>
+      <div class="nav-links" aria-label="页面导航">
+        <a href="#studio">生成器</a>
+        <a href="#craft">流程</a>
+        <a href="#finish">下载</a>
+      </div>
+      <label class="nav-cta" for="fileInput">上传照片</label>
+    </nav>
+
+    <section id="top" class="hero" aria-labelledby="heroTitle">
       <div class="hero-copy">
-        <div class="brand">Pixel Forge</div>
-        <h1 id="heroTitle">把照片做成像素头像</h1>
-        <p>上传人物照，自动裁成头像，生成可下载的方形像素 PNG。</p>
+        <p class="brand">像素头像生成器</p>
+        <h1 id="heroTitle">把真人照片变成清晰像素头像</h1>
+        <p class="hero-subtitle">上传人物照，自动裁出头像区域，生成可下载 PNG。</p>
         <div class="hero-actions">
           <label class="primary-button" for="fileInput">上传照片</label>
-          <button class="ghost-button" id="demoButton" type="button">使用示例</button>
+          <button class="ghost-button" id="demoButton" type="button">试试示例</button>
         </div>
       </div>
 
       <aside class="hero-preview" aria-label="头像生成预览">
-        <div class="portrait-stage" aria-hidden="true">
+        <div class="portrait-stage motion-image" aria-hidden="true">
           <figure class="source-card">
-            <img src="/demo-portrait.jpg" alt="示例人物照片" />
-          </figure>
-          <div class="pixel-card">
             <img src="/demo-portrait.jpg" alt="" />
-          </div>
-          <div class="tool-card">
-            <span>6 px</span>
-            <span>16 色</span>
-            <span>PNG</span>
+          </figure>
+          <figure class="pixel-card">
+            <img src="/demo-portrait.jpg" alt="" />
+          </figure>
+          <div class="process-card">
+            <span>裁脸</span>
+            <span>调色</span>
+            <span>导出</span>
           </div>
         </div>
       </aside>
     </section>
 
-    <section class="generator card" aria-label="头像生成器">
+    <section id="studio" class="generator card" aria-label="头像生成器">
       <div id="emptyState" class="upload-panel">
         <label class="drop-zone" id="dropZone" for="fileInput">
           <span class="avatar-mark" aria-hidden="true"></span>
-          <strong>拖入一张清晰人物照</strong>
-          <small>正脸、半身、生活照都可以。先裁脸，再调像素风格。</small>
+          <strong>上传一张人物照</strong>
+          <small>推荐正脸、半身或清晰生活照。Pixel Forge 会优先保留脸部轮廓。</small>
         </label>
-        <button class="ghost-button compact" id="emptyDemoButton" type="button">使用示例</button>
+        <button class="ghost-button compact" id="emptyDemoButton" type="button">试试示例</button>
       </div>
 
       <section class="result-view" aria-live="polite">
-        <div class="canvas-frame">
+        <div class="canvas-frame motion-image">
           <canvas id="resultCanvas" width="512" height="512"></canvas>
         </div>
         <div class="result-meta">
           <p id="status">选择一张人物照开始生成。</p>
           <div class="stage-list" aria-label="生成流程">
             <span>裁脸</span>
-            <span>像素化</span>
+            <span>生成</span>
             <span>下载</span>
           </div>
         </div>
@@ -131,12 +148,12 @@ app.innerHTML = `
 
       <section class="quick-controls" aria-label="快速设置">
         <div class="control-intro">
-          <h2>头像工作室</h2>
-          <p>先裁脸，再调像素风格。</p>
+          <h2>选择头像手感</h2>
+          <p>先比较整体风格，再按需要打开细调。</p>
         </div>
 
         <div class="control-row">
-          <span class="control-label">风格</span>
+          <span class="control-label">风格预设</span>
           <div class="pill-group preset-grid" aria-label="风格">
             <button type="button" class="preset-button active" data-preset="clean">清晰</button>
             <button type="button" class="preset-button" data-preset="soft">柔和</button>
@@ -152,6 +169,54 @@ app.innerHTML = `
 
         <button id="downloadButton" class="primary-button download" type="button" disabled>下载 PNG</button>
       </section>
+    </section>
+
+    <section id="craft" class="craft-section" aria-label="生成流程">
+      <div class="section-copy">
+        <h2>先保留脸，再压成像素语言</h2>
+        <p>页面只暴露必要决策：上传、选风格、下载。细节留给折叠面板。</p>
+      </div>
+      <div class="craft-grid">
+        <article class="craft-card visual-card motion-image">
+          <img src="/demo-portrait.jpg" alt="示例人物照片" />
+          <div>
+            <h3>输入是生活照</h3>
+            <p>不用先裁图，上传后自动进入头像画布。</p>
+          </div>
+        </article>
+        <article class="craft-card accent-card">
+          <h3>脸部优先</h3>
+          <p>有识别结果时按脸部裁剪，失败时使用稳定中心裁剪。</p>
+        </article>
+        <article class="craft-card dark-card">
+          <h3>三种颗粒</h3>
+          <p>清晰、标准、粗粒，快速比较同一张照片的头像手感。</p>
+        </article>
+        <article class="craft-card quiet-card">
+          <h3>本地可预览</h3>
+          <p>先在浏览器看到结果，确认后再下载 PNG。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="desire-section" aria-label="头像生成体验">
+      <div class="reveal-copy">
+        <p class="scrub-text">Pixel Forge 不是简单打马赛克。它把照片压缩成头像语言：脸部清楚、轮廓稳定、色块克制，最后得到能直接使用的像素 PNG。</p>
+      </div>
+      <div class="sample-strip" aria-label="风格示例">
+        <figure class="sample-card motion-image">
+          <img src="/demo-portrait.jpg" alt="清晰像素头像参考" />
+          <figcaption>清晰</figcaption>
+        </figure>
+        <figure class="sample-card motion-image">
+          <img src="/demo-portrait.jpg" alt="柔和像素头像参考" />
+          <figcaption>柔和</figcaption>
+        </figure>
+        <figure class="sample-card motion-image">
+          <img src="/demo-portrait.jpg" alt="复古像素头像参考" />
+          <figcaption>复古</figcaption>
+        </figure>
+      </div>
     </section>
 
     <section class="details-bar">
@@ -195,6 +260,15 @@ app.innerHTML = `
         </details>
       </details>
     </section>
+
+    <footer id="finish" class="final-cta">
+      <h2>做一张能马上使用的像素头像</h2>
+      <p>上传照片，选择手感，下载 PNG。主流程只保留必要控制。</p>
+      <div class="hero-actions centered-actions">
+        <label class="primary-button" for="fileInput">上传照片</label>
+        <button class="ghost-button" id="footerDemoButton" type="button">试试示例</button>
+      </div>
+    </footer>
   </main>
 `
 
@@ -203,6 +277,7 @@ const els = {
   dropZone: document.querySelector<HTMLDivElement>('#dropZone')!,
   demoButton: document.querySelector<HTMLButtonElement>('#demoButton')!,
   emptyDemoButton: document.querySelector<HTMLButtonElement>('#emptyDemoButton')!,
+  footerDemoButton: document.querySelector<HTMLButtonElement>('#footerDemoButton')!,
   emptyState: document.querySelector<HTMLDivElement>('#emptyState')!,
   presetButtons: [...document.querySelectorAll<HTMLButtonElement>('[data-preset]')],
   modeButtons: [...document.querySelectorAll<HTMLButtonElement>('[data-mode]')],
@@ -265,6 +340,7 @@ function bindControls() {
   })
   els.demoButton.addEventListener('click', loadDemo)
   els.emptyDemoButton.addEventListener('click', loadDemo)
+  els.footerDemoButton.addEventListener('click', loadDemo)
   els.presetButtons.forEach((button) => {
     button.addEventListener('click', () => applyPreset(button.dataset.preset ?? 'clean'))
   })
@@ -742,6 +818,48 @@ function downloadCurrent() {
 function clamp(value: number) {
   return Math.max(0, Math.min(255, Math.round(value)))
 }
+
+function setupMotion() {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  if (reduce) return
+
+  gsap.from('.top-nav', { y: -28, opacity: 0, duration: 0.8, ease: 'power3.out' })
+  gsap.from('.hero-copy > *', { y: 34, opacity: 0, duration: 0.9, stagger: 0.08, ease: 'power3.out' })
+  gsap.from('.portrait-stage', { scale: 0.88, opacity: 0, rotate: -2, duration: 1.1, ease: 'power3.out' })
+
+  gsap.utils.toArray<HTMLElement>('.motion-image').forEach((item) => {
+    gsap.fromTo(item, { scale: 0.86, opacity: 0.35 }, {
+      scale: 1,
+      opacity: 1,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: item,
+        start: 'top 88%',
+        end: 'bottom 22%',
+        scrub: true,
+      },
+    })
+  })
+
+  const text = document.querySelector<HTMLElement>('.scrub-text')
+  if (text) {
+    const words = text.textContent?.trim().split(/\s+/) ?? []
+    text.innerHTML = words.map((word) => `<span>${word}</span>`).join(' ')
+    gsap.to('.scrub-text span', {
+      opacity: 1,
+      stagger: 0.08,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: '.desire-section',
+        start: 'top 70%',
+        end: 'center 30%',
+        scrub: true,
+      },
+    })
+  }
+}
+
+setupMotion()
 
 bindControls()
 syncControls()
