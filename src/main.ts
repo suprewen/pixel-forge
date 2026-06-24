@@ -101,18 +101,13 @@ app.innerHTML = `
         <p class="hero-subtitle">上传人物照，自动裁出头像区域，生成可下载 PNG。</p>
         <div class="hero-actions">
           <label class="primary-button" for="fileInput">上传照片</label>
-          <button class="ghost-button" id="demoButton" type="button">试试示例</button>
         </div>
       </div>
 
       <aside class="hero-preview" aria-label="头像生成预览">
         <div class="portrait-stage motion-image" aria-hidden="true">
-          <figure class="source-card">
-            <img src="/demo-portrait.jpg" alt="" />
-          </figure>
-          <figure class="pixel-card">
-            <img src="/demo-portrait.jpg" alt="" />
-          </figure>
+          <figure class="source-card placeholder-face" aria-label="上传前的人像占位"></figure>
+          <figure class="pixel-card placeholder-pixel" aria-label="生成后的像素头像占位"></figure>
           <div class="process-card">
             <span>裁脸</span>
             <span>调色</span>
@@ -129,7 +124,6 @@ app.innerHTML = `
           <strong>上传一张人物照</strong>
           <small>推荐正脸、半身或清晰生活照。Pixel Forge 会优先保留脸部轮廓。</small>
         </label>
-        <button class="ghost-button compact" id="emptyDemoButton" type="button">试试示例</button>
       </div>
 
       <section class="result-view" aria-live="polite">
@@ -178,7 +172,6 @@ app.innerHTML = `
       </div>
       <div class="craft-grid">
         <article class="craft-card visual-card motion-image">
-          <img src="/demo-portrait.jpg" alt="示例人物照片" />
           <div>
             <h3>输入是生活照</h3>
             <p>不用先裁图，上传后自动进入头像画布。</p>
@@ -204,16 +197,13 @@ app.innerHTML = `
         <p class="scrub-text">Pixel Forge 不是简单打马赛克。它把照片压缩成头像语言：脸部清楚、轮廓稳定、色块克制，最后得到能直接使用的像素 PNG。</p>
       </div>
       <div class="sample-strip" aria-label="风格示例">
-        <figure class="sample-card motion-image">
-          <img src="/demo-portrait.jpg" alt="清晰像素头像参考" />
+        <figure class="sample-card clean-sample motion-image">
           <figcaption>清晰</figcaption>
         </figure>
-        <figure class="sample-card motion-image">
-          <img src="/demo-portrait.jpg" alt="柔和像素头像参考" />
+        <figure class="sample-card soft-sample motion-image">
           <figcaption>柔和</figcaption>
         </figure>
-        <figure class="sample-card motion-image">
-          <img src="/demo-portrait.jpg" alt="复古像素头像参考" />
+        <figure class="sample-card retro-sample motion-image">
           <figcaption>复古</figcaption>
         </figure>
       </div>
@@ -266,7 +256,6 @@ app.innerHTML = `
       <p>上传照片，选择手感，下载 PNG。主流程只保留必要控制。</p>
       <div class="hero-actions centered-actions">
         <label class="primary-button" for="fileInput">上传照片</label>
-        <button class="ghost-button" id="footerDemoButton" type="button">试试示例</button>
       </div>
     </footer>
   </main>
@@ -275,9 +264,6 @@ app.innerHTML = `
 const els = {
   fileInput: document.querySelector<HTMLInputElement>('#fileInput')!,
   dropZone: document.querySelector<HTMLDivElement>('#dropZone')!,
-  demoButton: document.querySelector<HTMLButtonElement>('#demoButton')!,
-  emptyDemoButton: document.querySelector<HTMLButtonElement>('#emptyDemoButton')!,
-  footerDemoButton: document.querySelector<HTMLButtonElement>('#footerDemoButton')!,
   emptyState: document.querySelector<HTMLDivElement>('#emptyState')!,
   presetButtons: [...document.querySelectorAll<HTMLButtonElement>('[data-preset]')],
   modeButtons: [...document.querySelectorAll<HTMLButtonElement>('[data-mode]')],
@@ -338,9 +324,6 @@ function bindControls() {
     const file = els.fileInput.files?.[0]
     if (file) loadFile(file)
   })
-  els.demoButton.addEventListener('click', loadDemo)
-  els.emptyDemoButton.addEventListener('click', loadDemo)
-  els.footerDemoButton.addEventListener('click', loadDemo)
   els.presetButtons.forEach((button) => {
     button.addEventListener('click', () => applyPreset(button.dataset.preset ?? 'clean'))
   })
@@ -441,24 +424,6 @@ function loadImage(src: string): Promise<HTMLImageElement> {
     img.onerror = reject
     img.src = src
   })
-}
-
-function loadDemo() {
-  const img = new Image()
-  img.onload = () => {
-    state.source = img
-    state.originalFile = undefined
-    state.upload = undefined
-    state.crop = undefined
-    state.sourceName = 'demo-portrait'
-    els.status.textContent = '正在生成头像…'
-    updateBackendControls()
-    renderAll()
-  }
-  img.onerror = () => {
-    els.status.textContent = '示例加载失败。'
-  }
-  img.src = `/demo-portrait.jpg?v=${Date.now()}`
 }
 
 function renderAll() {

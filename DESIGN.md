@@ -24,13 +24,13 @@
 - Radius system: 28-36px for large panels, 18-22px for cards, full pill for buttons and chips.
 - Spacing scale: 8px base, generous hero spacing, compact control groups.
 - Icon style: avoid decorative icons unless they clarify an action.
-- Image style: use real demo portrait assets and generated canvas previews. Avoid fake product screenshots.
+- Image style: use uploaded user images and generated canvas previews. Do not ship built-in example portraits.
 
 ## Interaction Rules
 
 - Navigation: one-line desktop nav, simplified mobile nav.
 - Primary action: `上传照片` is the only primary intent across the page.
-- Secondary action: `试试示例` is secondary and consistent.
+- Secondary action: none in the empty state. Do not provide a built-in sample image path.
 - Feedback: status text must state the current generation state plainly.
 - Motion: subtle entrance and scroll reveal only. Motion supports hierarchy, not spectacle.
 - Loading: status text changes immediately while rendering.
